@@ -1,0 +1,33 @@
+name: Build AU Plugin
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-au:
+    runs-on: macos-14
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Configurer (Intel x86_64, compatible macOS 10.13+)
+        run: |
+          cmake -B build -G Xcode \
+            -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+
+      - name: Compiler
+        run: cmake --build build --config Release
+
+      - name: Localiser le .component compilé (pour vérification dans les logs)
+        run: find build -name "*.component"
+
+      - name: Publier le plugin compilé en téléchargement
+        uses: actions/upload-artifact@v4
+        with:
+          name: PopVocal-AU
+          path: build/**/*.component
+          if-no-files-found: error
