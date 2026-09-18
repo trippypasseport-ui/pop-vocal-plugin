@@ -163,6 +163,14 @@ public:
 
             flip = !flip;
 
+            // Compensation de gain — sans ça, l'Intensity pilotait le VOLUME de
+            // sortie autant que la dynamique (muMakeupGain monte jusqu'à +24dB à
+            // Intensity élevé). On la retire ici, après usage pour le calcul de
+            // la compression elle-même : Intensity ne change plus que le
+            // caractère de la compression, jamais le niveau de sortie brut.
+            inL /= muMakeupGain;
+            inR /= muMakeupGain;
+
             if (outputGain < 1.0) { inL *= outputGain; inR *= outputGain; }
             if (mix < 1.0)
             {

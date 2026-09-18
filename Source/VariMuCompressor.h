@@ -146,6 +146,12 @@ private:
         const double coefficient = (muCoefficient + muCoefficient * muCoefficient) / 2.0;
         inputSample *= coefficient;
 
+        // Compensation de gain — muMakeupGain n'était jamais réellement compensé
+        // (la condition "output < 1.0" ne se déclenche quasiment jamais puisque
+        // outGain reste >= 1 par construction), donc l'Intensity poussait le
+        // niveau de sortie jusqu'à +9dB sans lien avec la dynamique réelle.
+        inputSample /= muMakeupGain;
+
         if (output < 1.0)
             inputSample *= output;
 
