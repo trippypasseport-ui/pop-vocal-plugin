@@ -1,11 +1,12 @@
 #pragma once
+#include "ICompressorAlgorithm.h"
 #include <cstdint>
 #include <cmath>
 #include <vector>
 #include <algorithm>
 
 /*
-    PopCompressor
+    PopCompressor — mode "Agressif"
     ============================================================
     Portage moderne (sans API VST2, sans dépendance JUCE) de
     l'algorithme DSP "Pop" d'Airwindows (Chris Johnson).
@@ -48,13 +49,16 @@
     ============================================================
 */
 
-class PopCompressor
+class PopCompressor : public ICompressorAlgorithm
 {
 public:
     PopCompressor() = default;
 
+    const char* getName() const override { return "Agressif (Pop)"; }
+    std::array<const char*, 3> getKnobLabels() const override { return { "INTENSITY", "OUTPUT", "MIX" }; }
+
     /** À appeler depuis prepareToPlay(). */
-    void prepare (double sampleRate)
+    void prepare (double sampleRate) override
     {
         overallScale = sampleRate / 44100.0;
 
@@ -68,7 +72,7 @@ public:
     }
 
     /** Réinitialise tout l'état interne (silence, changement de contexte). */
-    void reset()
+    void reset() override
     {
         std::fill (delayBufferL.begin(), delayBufferL.end(), 0.0);
         std::fill (delayBufferR.begin(), delayBufferR.end(), 0.0);
@@ -91,7 +95,7 @@ public:
                           comme l'original : n'agit qu'en dessous de 1.0).
         mixParam        : 0..1 — dry/wet.
     */
-    void setParameters (float intensityParam, float outputGainParam, float mixParam)
+    void setParameters (float intensityParam, float outputGainParam, float mixParam) override
     {
         intensity  = static_cast<double> (std::clamp (intensityParam, 0.0f, 1.0f));
         outputGain = static_cast<double> (std::clamp (outputGainParam, 0.0f, 1.0f));
@@ -99,7 +103,7 @@ public:
     }
 
     /** Traitement stéréo in-place, sample par sample. */
-    void processStereo (float* leftChannel, float* rightChannel, int numSamples)
+    void processStereo (float* leftChannel, float* rightChannel, int numSamples) override
     {
         // Recalculés une fois par bloc, comme dans l'original
         // (qui les recalcule une fois par appel à processReplacing).
