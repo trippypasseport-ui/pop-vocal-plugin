@@ -28,6 +28,7 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     eqHighParam     = apvts.getRawParameterValue ("eqHigh");
     eqHighFreqParam = apvts.getRawParameterValue ("eqHighFreq");
     eqHighCutParam  = apvts.getRawParameterValue ("eqHighCutFreq");
+    eqAirAmountParam = apvts.getRawParameterValue ("eqAirAmount");
 
     delayTimeParam     = apvts.getRawParameterValue ("delayTime");
     delayRateModeParam = apvts.getRawParameterValue ("delayRateMode");
@@ -97,6 +98,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("eqHigh", "High Gain", -12.0f, 12.0f, 0.0f);
     addFreq  ("eqHighFreq", "High Freq", 2000.0f, 16000.0f, 8000.0f);
     addFreq  ("eqHighCutFreq", "High Cut", 2000.0f, 20000.0f, 18000.0f);
+    addFloat ("eqAirAmount", "Air", 0.0f, 6.0f, 0.0f);
 
     // Delay — sync tempo + ping-pong
     addFloat ("delayTime", "Time (Free)", 0.0f, 1.0f, 0.3f);
@@ -219,7 +221,8 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
                            eqLowParam->load(), eqLowFreqParam->load(),
                            eqMidParam->load(), eqMidFreqParam->load(),
                            eqHighParam->load(), eqHighFreqParam->load(),
-                           eqHighCutParam->load());
+                           eqHighCutParam->load(),
+                           eqAirAmountParam->load());
         eq.processStereo (left, right, numSamples);
     }
 

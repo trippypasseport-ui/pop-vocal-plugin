@@ -86,6 +86,7 @@ private:
     std::atomic<float>* eqHighParam     = nullptr;
     std::atomic<float>* eqHighFreqParam = nullptr;
     std::atomic<float>* eqHighCutParam  = nullptr;
+    std::atomic<float>* eqAirAmountParam = nullptr;
 
     std::atomic<float>* delayTimeParam     = nullptr; // utilisé seulement en mode "Free"
     std::atomic<float>* delayRateModeParam = nullptr; // 0=Free,1=1/2,2=1/4,3=1/8,4=1/16

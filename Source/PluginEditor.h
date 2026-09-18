@@ -31,6 +31,7 @@ private:
         int comboBoxKnobIndex = -1;                 // -1 = pleine largeur ; sinon rattaché à ce knob précis
         juce::ToggleButton* toggleButton = nullptr; // ping-pong (Delay uniquement)
         juce::ToggleButton* activeToggle = nullptr; // bypass actif/inactif, sur toutes les sections
+        juce::Component* extraKnobSlot = nullptr;   // composant logé dans le slot vide suivant le dernier knob
         juce::Component* extraDisplay = nullptr;    // EQ : courbe
         int extraDisplayHeight = 0;
         int knobColumns = 3;                        // EQ : 3 colonnes x 2 rangées (6 knobs)
