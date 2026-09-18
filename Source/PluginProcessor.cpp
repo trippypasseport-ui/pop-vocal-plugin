@@ -114,6 +114,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
 
 void PopVocalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    currentSampleRate = sampleRate;
+
     resonanceBroad.prepare (sampleRate, samplesPerBlock);
     resonancePrecise.prepare (sampleRate, samplesPerBlock);
 
@@ -161,7 +163,11 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         const float peak = buffer.getMagnitude (0, numSamples);
         const float peakDb = juce::Decibels::gainToDecibels (peak, -60.0f);
         const float current = inputLevelDb.load();
-        inputLevelDb.store (peakDb > current ? peakDb : current - 0.5f);
+        // Retombée en dB/seconde (pas dB/bloc) pour que la vitesse du mètre
+        // ne dépende pas de la taille de buffer réglée côté host.
+        const double blockSeconds = (double) numSamples / currentSampleRate;
+        const float decay = 20.0f * (float) blockSeconds; // ~20 dB/s
+        inputLevelDb.store (peakDb > current ? peakDb : current - decay);
     }
 
     // 1. De-Resonance large
@@ -224,7 +230,9 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         const float peak = buffer.getMagnitude (0, numSamples);
         const float peakDb = juce::Decibels::gainToDecibels (peak, -60.0f);
         const float current = outputLevelDb.load();
-        outputLevelDb.store (peakDb > current ? peakDb : current - 0.5f);
+        const double blockSeconds = (double) numSamples / currentSampleRate;
+        const float decay = 20.0f * (float) blockSeconds; // ~20 dB/s
+        outputLevelDb.store (peakDb > current ? peakDb : current - decay);
     }
 }
 

@@ -7,15 +7,17 @@
     EQCurveComponent
     ============================================================
     Affichage temps réel (Phase 1 — pas encore éditable à la
-    souris, ça viendra en Phase 2 si besoin) de la réponse en
-    fréquence de la section EQ, calculée à partir des 3 gains
-    actuellement réglés (low shelf 120Hz, mid bell 1kHz, high
-    shelf 8kHz — mêmes fréquences fixes que ParametricEQ.h).
+    souris pour bouger les fréquences, ça viendra en Phase 2 si
+    besoin) de la réponse en fréquence de la section EQ.
+
+    Amplitude verticale (dbRange) réglable à la molette de la
+    souris directement sur la courbe — zoom in/out sur l'échelle
+    en dB, utile pour voir les coupe-bas/coupe-haut qui peuvent
+    dépasser largement +/-15dB avec leur pente à 24dB/oct.
 
     Se repaint automatiquement via un Timer pour suivre les
     changements de paramètres, y compris ceux venant de
-    l'automation de l'hôte (pas seulement les knobs bougés à la
-    souris).
+    l'automation de l'hôte.
     ============================================================
 */
 
@@ -29,6 +31,14 @@ public:
     }
 
     ~EQCurveComponent() override { stopTimer(); }
+
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails& wheel) override
+    {
+        // Molette vers le haut = zoom in (plage plus petite, courbe plus ample visuellement)
+        const float step = 3.0f;
+        dbRange = juce::jlimit (6.0f, 48.0f, dbRange - wheel.deltaY * step * 4.0f);
+        repaint();
+    }
 
     void paint (juce::Graphics& g) override
     {
@@ -81,7 +91,6 @@ public:
         juce::Path curve;
         constexpr int numPoints = 128;
         constexpr float minFreq = 20.0f, maxFreq = 20000.0f;
-        constexpr float dbRange = 15.0f; // +/- 15 dB visibles verticalement
 
         for (int i = 0; i < numPoints; ++i)
         {
@@ -110,10 +119,17 @@ public:
 
         g.setColour (juce::Colour (0xffe8862b));
         g.strokePath (curve, juce::PathStrokeType (2.0f));
+
+        // Indication de l'échelle actuelle (coin, petit texte discret)
+        g.setColour (juce::Colours::white.withAlpha (0.35f));
+        g.setFont (juce::Font (9.0f));
+        g.drawText ("+/-" + juce::String ((int) dbRange) + "dB  (molette = zoom)",
+                    bounds.reduced (4.0f), juce::Justification::topRight);
     }
 
 private:
     void timerCallback() override { repaint(); }
 
     juce::AudioProcessorValueTreeState& apvts;
+    float dbRange = 15.0f; // amplitude verticale affichée, ajustable à la molette
 };

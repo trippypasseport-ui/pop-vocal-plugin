@@ -9,18 +9,19 @@
     Delay stéréo avec feedback, interpolation linéaire, et un
     mode ping-pong optionnel.
 
-    Le calage tempo (Free / 1/2 / 1/4 / 1/8) est calculé côté
-    PluginProcessor (qui a accès au BPM de l'hôte via
-    AudioPlayHead) — ce module reçoit directement un temps de
-    delay en millisecondes déjà résolu, il n'a pas connaissance
-    du tempo lui-même.
-
     Mode normal : L et R traités indépendamment, même temps de
     delay des deux côtés.
-    Mode ping-pong : l'entrée alimente d'abord le tap gauche ;
-    chaque répétition rebondit ensuite de gauche à droite et
-    vice-versa via un feedback croisé (architecture ping-pong
-    classique).
+
+    Mode ping-pong — refonte v2 : le RÉSEAU de feedback interne
+    (génération des répétitions) reste TOUJOURS fixe et stable —
+    aucune discontinuité possible à cet endroit. Ce qui alterne,
+    c'est uniquement le ROUTAGE de sortie (quel canal physique
+    reçoit la répétition "génératrice" la plus forte), et ce
+    routage est CROSSFADÉ en douceur (~25ms) plutôt que basculé
+    d'un coup — c'est ce qui causait le clic à chaque bascule
+    dans la v1. Le côté privilégié alterne toutes les
+    delayTimeSamples, pour une vraie alternance perceptible sans
+    artefact.
     ============================================================
 */
 
@@ -31,18 +32,20 @@ public:
     {
         sampleRate = sampleRateIn;
         const int maxDelaySamples = (int) (2.5 * sampleRate);
-        bufferL.assign ((size_t) maxDelaySamples, 0.0f);
-        bufferR.assign ((size_t) maxDelaySamples, 0.0f);
-        writePos = 0;
+        bufferGen.assign ((size_t) maxDelaySamples, 0.0f);
+        bufferFollow.assign ((size_t) maxDelaySamples, 0.0f);
+        crossfadeSamples = std::max (1.0, 0.025 * sampleRate); // ~25ms de rampe
+        reset();
     }
 
     void reset()
     {
-        std::fill (bufferL.begin(), bufferL.end(), 0.0f);
-        std::fill (bufferR.begin(), bufferR.end(), 0.0f);
+        std::fill (bufferGen.begin(), bufferGen.end(), 0.0f);
+        std::fill (bufferFollow.begin(), bufferFollow.end(), 0.0f);
         writePos = 0;
         sampleCounterSinceFlip = 0.0;
-        primaryIsLeft = true;
+        genOnLeftTarget = 1.0f;
+        genOnLeftSmoothed = 1.0f;
     }
 
     /** delayTimeMs déjà résolu (Free ms, ou calculé depuis le tempo côté processeur). */
@@ -56,9 +59,11 @@ public:
 
     void processStereo (float* left, float* right, int numSamples)
     {
-        const int bufSize = (int) bufferL.size();
+        const int bufSize = (int) bufferGen.size();
         if (bufSize == 0)
             return;
+
+        const float smoothCoeff = (float) (1.0 / crossfadeSamples);
 
         for (int i = 0; i < numSamples; ++i)
         {
@@ -70,47 +75,46 @@ public:
             const int readIndex1 = (readIndex0 + 1) % bufSize;
             const float frac = (float) (readPos - std::floor (readPos));
 
-            const float delayedL = bufferL[(size_t) readIndex0] * (1.0f - frac) + bufferL[(size_t) readIndex1] * frac;
-            const float delayedR = bufferR[(size_t) readIndex0] * (1.0f - frac) + bufferR[(size_t) readIndex1] * frac;
+            const float delayedGen    = bufferGen[(size_t) readIndex0]    * (1.0f - frac) + bufferGen[(size_t) readIndex1]    * frac;
+            const float delayedFollow = bufferFollow[(size_t) readIndex0] * (1.0f - frac) + bufferFollow[(size_t) readIndex1] * frac;
 
             const float inL = left[i];
             const float inR = right[i];
 
+            float wetL, wetR;
+
             if (pingPong)
             {
-                // Entrée sommée mono -> tap "primaire" du moment, avec feedback croisé
-                // vers l'autre côté. Le côté primaire alterne toutes les delayTimeSamples
-                // pour que la voix rebondisse vraiment de chaque côté, à niveau équivalent,
-                // plutôt que de toujours privilégier le même canal.
+                // Réseau de feedback FIXE — toujours la même topologie, jamais de rupture ici
                 const float inputMono = 0.5f * (inL + inR);
+                bufferGen[(size_t) writePos]    = inputMono + delayedFollow * feedback;
+                bufferFollow[(size_t) writePos] = delayedGen * feedback;
 
-                if (primaryIsLeft)
-                {
-                    bufferL[(size_t) writePos] = inputMono + delayedR * feedback;
-                    bufferR[(size_t) writePos] = delayedL * feedback;
-                }
-                else
-                {
-                    bufferR[(size_t) writePos] = inputMono + delayedL * feedback;
-                    bufferL[(size_t) writePos] = delayedR * feedback;
-                }
-
+                // Bascule périodique de la CIBLE de routage (pas du réseau lui-même)
                 sampleCounterSinceFlip += 1.0;
                 if (sampleCounterSinceFlip >= delayTimeSamples)
                 {
                     sampleCounterSinceFlip -= delayTimeSamples;
-                    primaryIsLeft = ! primaryIsLeft;
+                    genOnLeftTarget = 1.0f - genOnLeftTarget;
                 }
+
+                // Suivi en douceur de la cible (~25ms) -> zéro discontinuité audible
+                genOnLeftSmoothed += (genOnLeftTarget - genOnLeftSmoothed) * smoothCoeff;
+
+                wetL = genOnLeftSmoothed * delayedGen + (1.0f - genOnLeftSmoothed) * delayedFollow;
+                wetR = (1.0f - genOnLeftSmoothed) * delayedGen + genOnLeftSmoothed * delayedFollow;
             }
             else
             {
                 // Mode normal : L et R indépendants, même temps de delay
-                bufferL[(size_t) writePos] = inL + delayedL * feedback;
-                bufferR[(size_t) writePos] = inR + delayedR * feedback;
+                bufferGen[(size_t) writePos]    = inL + delayedGen * feedback;
+                bufferFollow[(size_t) writePos] = inR + delayedFollow * feedback;
+                wetL = delayedGen;
+                wetR = delayedFollow;
             }
 
-            left[i]  = inL * (1.0f - mix) + delayedL * mix;
-            right[i] = inR * (1.0f - mix) + delayedR * mix;
+            left[i]  = inL * (1.0f - mix) + wetL * mix;
+            right[i] = inR * (1.0f - mix) + wetR * mix;
 
             writePos = (writePos + 1) % bufSize;
         }
@@ -119,12 +123,15 @@ public:
 private:
     double sampleRate = 44100.0;
     double delayTimeSamples = 20000.0;
+    double crossfadeSamples = 1000.0;
     float feedback = 0.3f;
     float mix = 0.0f;
     bool pingPong = false;
-    double sampleCounterSinceFlip = 0.0;
-    bool primaryIsLeft = true;
 
-    std::vector<float> bufferL, bufferR;
+    double sampleCounterSinceFlip = 0.0;
+    float genOnLeftTarget = 1.0f;
+    float genOnLeftSmoothed = 1.0f;
+
+    std::vector<float> bufferGen, bufferFollow;
     int writePos = 0;
 };
