@@ -38,6 +38,9 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     reverbMixParam     = apvts.getRawParameterValue ("reverbMix");
     reverbSizeParam    = apvts.getRawParameterValue ("reverbSize");
     reverbDampingParam = apvts.getRawParameterValue ("reverbDamping");
+
+    inputGainParam  = apvts.getRawParameterValue ("inputGain");
+    outputGainParam = apvts.getRawParameterValue ("outputGain");
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::createParameterLayout()
@@ -102,6 +105,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("reverbSize",    "Size",       0.0f, 1.0f, 0.5f);
     addFloat ("reverbDamping", "Damping",    0.0f, 1.0f, 0.5f);
 
+    // Entrée / Sortie — gain de tranche, mesuré par les mètres de niveau
+    addFloat ("inputGain",  "Input Gain",  -24.0f, 24.0f, 0.0f);
+    addFloat ("outputGain", "Output Gain", -24.0f, 24.0f, 0.0f);
+
     return { params.begin(), params.end() };
 }
 
@@ -147,6 +154,15 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     auto* left  = buffer.getWritePointer (0);
     auto* right = buffer.getWritePointer (1);
     const int numSamples = buffer.getNumSamples();
+
+    // 0. Gain d'entrée + mètre (avant tout traitement)
+    buffer.applyGain (juce::Decibels::decibelsToGain (inputGainParam->load()));
+    {
+        const float peak = buffer.getMagnitude (0, numSamples);
+        const float peakDb = juce::Decibels::gainToDecibels (peak, -60.0f);
+        const float current = inputLevelDb.load();
+        inputLevelDb.store (peakDb > current ? peakDb : current - 0.5f);
+    }
 
     // 1. De-Resonance large
     resonanceBroad.setParameters (resBroadSensitivityParam->load(), resBroadDepthParam->load(), resBroadMixParam->load());
@@ -201,6 +217,15 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // 6. Reverb
     reverb.setParameters (reverbMixParam->load(), reverbSizeParam->load(), reverbDampingParam->load());
     reverb.processStereo (left, right, numSamples);
+
+    // 7. Gain de sortie + mètre (après tout traitement)
+    buffer.applyGain (juce::Decibels::decibelsToGain (outputGainParam->load()));
+    {
+        const float peak = buffer.getMagnitude (0, numSamples);
+        const float peakDb = juce::Decibels::gainToDecibels (peak, -60.0f);
+        const float current = outputLevelDb.load();
+        outputLevelDb.store (peakDb > current ? peakDb : current - 0.5f);
+    }
 }
 
 juce::AudioProcessorEditor* PopVocalAudioProcessor::createEditor()

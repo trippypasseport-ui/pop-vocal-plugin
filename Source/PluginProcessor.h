@@ -45,6 +45,10 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    // Accès lecture seule aux niveaux entrée/sortie pour le mètre de l'éditeur
+    const std::atomic<float>& getInputLevelDb() const noexcept { return inputLevelDb; }
+    const std::atomic<float>& getOutputLevelDb() const noexcept { return outputLevelDb; }
+
 private:
     // Chaîne, dans l'ordre :
     // de-res large -> compresseur (sélectionnable) -> de-res précise ->
@@ -92,6 +96,11 @@ private:
     std::atomic<float>* reverbMixParam     = nullptr;
     std::atomic<float>* reverbSizeParam    = nullptr;
     std::atomic<float>* reverbDampingParam = nullptr;
+
+    std::atomic<float>* inputGainParam  = nullptr;
+    std::atomic<float>* outputGainParam = nullptr;
+    std::atomic<float> inputLevelDb  { -60.0f };
+    std::atomic<float> outputLevelDb { -60.0f };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PopVocalAudioProcessor)
 };

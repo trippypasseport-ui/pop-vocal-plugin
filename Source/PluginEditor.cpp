@@ -130,7 +130,8 @@ void PopVocalAudioProcessorEditor::applyPreset (const std::vector<std::pair<juce
 }
 
 PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p), eqCurve (p.apvts)
+    : AudioProcessorEditor (&p), processorRef (p), eqCurve (p.apvts),
+      inputMeter (p.getInputLevelDb()), outputMeter (p.getOutputLevelDb())
 {
     setLookAndFeel (&lookAndFeel);
 
@@ -344,7 +345,43 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     updateCompressorLabels(); // synchronise les libellés avec le mode actuel au chargement
 
-    setSize (1040, 760);
+    // ================= INPUT / OUTPUT =================
+    inputTitleLabel.setText ("INPUT", juce::dontSendNotification);
+    inputTitleLabel.setFont (juce::Font (13.0f, juce::Font::bold));
+    inputTitleLabel.setColour (juce::Label::textColourId, juce::Colour (0xffe8862b));
+    inputTitleLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (inputTitleLabel);
+
+    outputTitleLabel.setText ("OUTPUT", juce::dontSendNotification);
+    outputTitleLabel.setFont (juce::Font (13.0f, juce::Font::bold));
+    outputTitleLabel.setColour (juce::Label::textColourId, juce::Colour (0xffe8862b));
+    outputTitleLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (outputTitleLabel);
+
+    addAndMakeVisible (inputMeter);
+    addAndMakeVisible (outputMeter);
+
+    inputGainSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    inputGainSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 56, 16);
+    addAndMakeVisible (inputGainSlider);
+    inputGainLabel.setText ("GAIN", juce::dontSendNotification);
+    inputGainLabel.setFont (juce::Font (10.0f, juce::Font::bold));
+    inputGainLabel.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
+    inputGainLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (inputGainLabel);
+    attach (inputGainSlider, "inputGain");
+
+    outputGainSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    outputGainSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 56, 16);
+    addAndMakeVisible (outputGainSlider);
+    outputGainLabel.setText ("GAIN", juce::dontSendNotification);
+    outputGainLabel.setFont (juce::Font (10.0f, juce::Font::bold));
+    outputGainLabel.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
+    outputGainLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (outputGainLabel);
+    attach (outputGainSlider, "outputGain");
+
+    setSize (1300, 760);
 }
 
 PopVocalAudioProcessorEditor::~PopVocalAudioProcessorEditor()
@@ -364,7 +401,14 @@ void PopVocalAudioProcessorEditor::paint (juce::Graphics& g)
     g.setColour (juce::Colour (0xffe8862b).withAlpha (0.6f));
     g.fillRect (24.0f, 66.0f, (float) getWidth() - 48.0f, 1.5f);
 
-    auto content = getLocalBounds().reduced (24).withTop (86);
+    auto full = getLocalBounds();
+    auto inputStrip  = full.removeFromLeft (130);
+    auto outputStrip = full.removeFromRight (130);
+
+    drawPanel (g, inputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0));
+    drawPanel (g, outputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0));
+
+    auto content = full.reduced (24, 0).withTop (86).withBottom (getHeight() - 24);
     const int rowHeight = content.getHeight() / 2 - 8;
     const int colWidth  = (content.getWidth() - 2 * 16) / 3;
 
@@ -384,7 +428,34 @@ void PopVocalAudioProcessorEditor::resized()
     titleLabel.setBounds (24, 14, 500, 30);
     subtitleLabel.setBounds (24, 44, 600, 16);
 
-    auto content = getLocalBounds().reduced (24).withTop (86);
+    auto full = getLocalBounds();
+    auto inputStrip  = full.removeFromLeft (130);
+    auto outputStrip = full.removeFromRight (130);
+
+    // --- Tranche INPUT ---
+    {
+        auto area = inputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0);
+        area.reduce (8, 6);
+        inputTitleLabel.setBounds (area.removeFromTop (18));
+        auto gainArea = area.removeFromBottom (78);
+        inputMeter.setBounds (area.reduced (30, 4));
+        inputGainLabel.setBounds (gainArea.removeFromTop (14));
+        inputGainSlider.setBounds (gainArea.reduced (4, 0));
+    }
+
+    // --- Tranche OUTPUT ---
+    {
+        auto area = outputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0);
+        area.reduce (8, 6);
+        outputTitleLabel.setBounds (area.removeFromTop (18));
+        auto gainArea = area.removeFromBottom (78);
+        outputMeter.setBounds (area.reduced (30, 4));
+        outputGainLabel.setBounds (gainArea.removeFromTop (14));
+        outputGainSlider.setBounds (gainArea.reduced (4, 0));
+    }
+
+    // --- Grille 3x2 de la chaîne, au centre ---
+    auto content = full.reduced (24, 0).withTop (86).withBottom (getHeight() - 24);
     const int rowHeight = content.getHeight() / 2 - 8;
     const int colWidth  = (content.getWidth() - 2 * 16) / 3;
 

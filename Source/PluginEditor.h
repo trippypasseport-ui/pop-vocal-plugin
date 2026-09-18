@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "PopLookAndFeel.h"
 #include "EQCurveComponent.h"
+#include "LevelMeter.h"
 #include <array>
 #include <vector>
 
@@ -55,6 +56,12 @@ private:
     juce::ToggleButton delayPingPongToggle { "Ping-Pong" };
 
     EQCurveComponent eqCurve;
+
+    // Entrée / Sortie — mètres + gain de tranche, en bordure gauche/droite
+    juce::Label inputTitleLabel, outputTitleLabel;
+    juce::Slider inputGainSlider, outputGainSlider;
+    juce::Label inputGainLabel, outputGainLabel;
+    LevelMeter inputMeter, outputMeter;
 
     using SliderAttachment      = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ComboBoxAttachment    = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
