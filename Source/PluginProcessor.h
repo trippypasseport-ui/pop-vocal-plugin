@@ -47,10 +47,10 @@ public:
 
 private:
     // Chaîne, dans l'ordre :
-    // de-res large (lisse) -> compresseur (sélectionnable) ->
-    // de-res précise (chirurgicale) -> EQ -> delay -> reverb
-    ResonanceSuppressor resonanceBroad   { 1.8f };  // Q bas = bandes larges
-    ResonanceSuppressor resonancePrecise { 6.0f };  // Q haut = bandes étroites
+    // de-res large -> compresseur (sélectionnable) -> de-res précise ->
+    // EQ -> delay (sync tempo + ping-pong) -> reverb
+    ResonanceSuppressor resonanceBroad   { 1.8f };
+    ResonanceSuppressor resonancePrecise { 6.0f };
 
     PopCompressor        compAgressif;
     ButterCompCompressor compDoux;
@@ -74,13 +74,18 @@ private:
     std::atomic<float>* resPreciseDepthParam       = nullptr;
     std::atomic<float>* resPreciseMixParam         = nullptr;
 
-    std::atomic<float>* eqLowParam  = nullptr;
-    std::atomic<float>* eqMidParam  = nullptr;
-    std::atomic<float>* eqHighParam = nullptr;
+    std::atomic<float>* eqLowParam      = nullptr;
+    std::atomic<float>* eqLowFreqParam  = nullptr;
+    std::atomic<float>* eqMidParam      = nullptr;
+    std::atomic<float>* eqMidFreqParam  = nullptr;
+    std::atomic<float>* eqHighParam     = nullptr;
+    std::atomic<float>* eqHighFreqParam = nullptr;
 
-    std::atomic<float>* delayTimeParam     = nullptr;
+    std::atomic<float>* delayTimeParam     = nullptr; // utilisé seulement en mode "Free"
+    std::atomic<float>* delayRateModeParam = nullptr; // 0=Free,1=1/2,2=1/4,3=1/8
     std::atomic<float>* delayFeedbackParam = nullptr;
     std::atomic<float>* delayMixParam      = nullptr;
+    std::atomic<float>* delayPingPongParam = nullptr;
 
     std::atomic<float>* reverbMixParam     = nullptr;
     std::atomic<float>* reverbSizeParam    = nullptr;

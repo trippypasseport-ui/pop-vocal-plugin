@@ -41,15 +41,22 @@ public:
         g.setColour (juce::Colours::white.withAlpha (0.12f));
         g.drawLine (bounds.getX(), zeroY, bounds.getRight(), zeroY, 1.0f);
 
-        auto* lowParam  = apvts.getRawParameterValue ("eqLow");
-        auto* midParam  = apvts.getRawParameterValue ("eqMid");
-        auto* highParam = apvts.getRawParameterValue ("eqHigh");
-        if (lowParam == nullptr || midParam == nullptr || highParam == nullptr)
+        auto* lowParam      = apvts.getRawParameterValue ("eqLow");
+        auto* lowFreqParam  = apvts.getRawParameterValue ("eqLowFreq");
+        auto* midParam      = apvts.getRawParameterValue ("eqMid");
+        auto* midFreqParam  = apvts.getRawParameterValue ("eqMidFreq");
+        auto* highParam     = apvts.getRawParameterValue ("eqHigh");
+        auto* highFreqParam = apvts.getRawParameterValue ("eqHighFreq");
+        if (lowParam == nullptr || midParam == nullptr || highParam == nullptr
+            || lowFreqParam == nullptr || midFreqParam == nullptr || highFreqParam == nullptr)
             return;
 
         const float lowGain  = lowParam->load();
         const float midGain  = midParam->load();
         const float highGain = highParam->load();
+        const float lowFreq  = lowFreqParam->load();
+        const float midFreq  = midFreqParam->load();
+        const float highFreq = highFreqParam->load();
 
         // Sample rate de référence pour le tracé — la réponse d'un shelf/peak
         // en dB ne dépend quasiment pas du sample rate choisi ici tant qu'il
@@ -58,11 +65,11 @@ public:
         const double displaySampleRate = 48000.0;
 
         auto lowCoeffs  = juce::dsp::IIR::Coefficients<float>::makeLowShelf (
-            displaySampleRate, 120.0f, 0.707f, juce::Decibels::decibelsToGain (lowGain));
+            displaySampleRate, lowFreq, 0.707f, juce::Decibels::decibelsToGain (lowGain));
         auto midCoeffs  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (
-            displaySampleRate, 1000.0f, 0.9f, juce::Decibels::decibelsToGain (midGain));
+            displaySampleRate, midFreq, 0.9f, juce::Decibels::decibelsToGain (midGain));
         auto highCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
-            displaySampleRate, 8000.0f, 0.707f, juce::Decibels::decibelsToGain (highGain));
+            displaySampleRate, highFreq, 0.707f, juce::Decibels::decibelsToGain (highGain));
 
         juce::Path curve;
         constexpr int numPoints = 128;

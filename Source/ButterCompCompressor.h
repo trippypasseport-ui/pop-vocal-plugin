@@ -90,8 +90,8 @@ public:
 private:
     struct ChannelState
     {
-        double targetPos = 0.0, targetNeg = 0.0;
-        double controlAPos = 0.0, controlANeg = 0.0;
+        double targetPos = 1.0, targetNeg = 1.0;
+        double controlAPos = 1.0, controlANeg = 1.0;
     };
 
     static float clamp01 (float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); }

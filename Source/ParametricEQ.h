@@ -5,14 +5,10 @@
     ParametricEQ
     ============================================================
     EQ 3 bandes pensé comme les mouvements de base d'un channel
-    strip vocal :
-      - Low shelf  ~120 Hz  : corps / proximité
-      - Mid bell   ~1 kHz   : présence / nasillard à corriger
-      - High shelf ~8 kHz   : air / brillance
-
-    Fréquences et Q fixes pour l'instant, un seul knob de gain
-    par bande — facile à étendre plus tard avec freq/Q par bande
-    si besoin d'un contrôle plus fin.
+    strip vocal, fréquence ET gain réglables par bande :
+      - Low shelf  (40-400 Hz par défaut 120 Hz)  : corps / proximité
+      - Mid bell   (200-5000 Hz par défaut 1 kHz) : présence / nasillard
+      - High shelf (2000-16000 Hz par défaut 8kHz): air / brillance
     ============================================================
 */
 
@@ -43,11 +39,12 @@ public:
         }
     }
 
-    void setParameters (float lowGainDb, float midGainDb, float highGainDb)
+    void setParameters (float lowGainDb, float lowFreqHz, float midGainDb, float midFreqHz,
+                         float highGainDb, float highFreqHz)
     {
-        lowGain  = lowGainDb;
-        midGain  = midGainDb;
-        highGain = highGainDb;
+        lowGain  = lowGainDb;  lowFreq  = lowFreqHz;
+        midGain  = midGainDb;  midFreq  = midFreqHz;
+        highGain = highGainDb; highFreq = highFreqHz;
         updateCoefficients();
     }
 
@@ -78,12 +75,9 @@ private:
         }
     }
 
-    static constexpr float lowFreq  = 120.0f;
-    static constexpr float midFreq  = 1000.0f;
-    static constexpr float highFreq = 8000.0f;
-
     double sampleRate = 44100.0;
     float lowGain = 0.0f, midGain = 0.0f, highGain = 0.0f;
+    float lowFreq = 120.0f, midFreq = 1000.0f, highFreq = 8000.0f;
 
     juce::dsp::IIR::Filter<float> lowShelf[2], midBell[2], highShelf[2];
 };

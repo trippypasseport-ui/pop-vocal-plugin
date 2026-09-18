@@ -6,15 +6,21 @@
 /*
     DelayModule
     ============================================================
-    Delay stéréo simple : ligne à retard avec feedback,
-    interpolation linéaire pour un temps de delay continu
-    (pas de zipper noise en tournant le knob).
+    Delay stéréo avec feedback, interpolation linéaire, et un
+    mode ping-pong optionnel.
 
-    Trois contrôles :
-      - time (0..1)     -> 20 ms .. 1000 ms
-      - feedback (0..1) -> jusqu'à 0.9 (limité pour éviter
-                            l'emballement/le larsen numérique)
-      - mix (0..1)      -> dry/wet
+    Le calage tempo (Free / 1/2 / 1/4 / 1/8) est calculé côté
+    PluginProcessor (qui a accès au BPM de l'hôte via
+    AudioPlayHead) — ce module reçoit directement un temps de
+    delay en millisecondes déjà résolu, il n'a pas connaissance
+    du tempo lui-même.
+
+    Mode normal : L et R traités indépendamment, même temps de
+    delay des deux côtés.
+    Mode ping-pong : l'entrée alimente d'abord le tap gauche ;
+    chaque répétition rebondit ensuite de gauche à droite et
+    vice-versa via un feedback croisé (architecture ping-pong
+    classique).
     ============================================================
 */
 
@@ -24,7 +30,7 @@ public:
     void prepare (double sampleRateIn, int /*maxBlockSize*/)
     {
         sampleRate = sampleRateIn;
-        const int maxDelaySamples = (int) (2.5 * sampleRate); // ~2.5 s de marge dans le buffer
+        const int maxDelaySamples = (int) (2.5 * sampleRate);
         bufferL.assign ((size_t) maxDelaySamples, 0.0f);
         bufferR.assign ((size_t) maxDelaySamples, 0.0f);
         writePos = 0;
@@ -37,11 +43,13 @@ public:
         writePos = 0;
     }
 
-    void setParameters (float time01, float feedback01, float mix01)
+    /** delayTimeMs déjà résolu (Free ms, ou calculé depuis le tempo côté processeur). */
+    void setParameters (double delayTimeMs, float feedback01, float mix01, bool pingPongOn)
     {
-        delayTimeSamples = (20.0 + (double) time01 * 980.0) * 0.001 * sampleRate;
+        delayTimeSamples = (delayTimeMs * 0.001) * sampleRate;
         feedback = std::min (0.9f, std::max (0.0f, feedback01 * 0.9f));
         mix = mix01;
+        pingPong = pingPongOn;
     }
 
     void processStereo (float* left, float* right, int numSamples)
@@ -66,8 +74,19 @@ public:
             const float inL = left[i];
             const float inR = right[i];
 
-            bufferL[(size_t) writePos] = inL + delayedL * feedback;
-            bufferR[(size_t) writePos] = inR + delayedR * feedback;
+            if (pingPong)
+            {
+                // Entrée sommée mono -> tap gauche ; feedback croisé L<->R -> rebond
+                const float inputMono = 0.5f * (inL + inR);
+                bufferL[(size_t) writePos] = inputMono + delayedR * feedback;
+                bufferR[(size_t) writePos] = delayedL * feedback;
+            }
+            else
+            {
+                // Mode normal : L et R indépendants, même temps de delay
+                bufferL[(size_t) writePos] = inL + delayedL * feedback;
+                bufferR[(size_t) writePos] = inR + delayedR * feedback;
+            }
 
             left[i]  = inL * (1.0f - mix) + delayedL * mix;
             right[i] = inR * (1.0f - mix) + delayedR * mix;
@@ -81,6 +100,7 @@ private:
     double delayTimeSamples = 20000.0;
     float feedback = 0.3f;
     float mix = 0.0f;
+    bool pingPong = false;
 
     std::vector<float> bufferL, bufferR;
     int writePos = 0;
