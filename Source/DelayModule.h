@@ -9,20 +9,23 @@
     Delay stéréo avec feedback, interpolation linéaire, et un
     mode ping-pong optionnel.
 
-    Mode normal : L et R traités indépendamment, même temps de
-    delay des deux côtés.
+    Mode normal : deux lignes indépendantes (bufferL/bufferR), L
+    et R traités séparément, même temps de delay des deux côtés
+    — le stéréo d'origine du signal est préservé.
 
-    Mode ping-pong — v3 : le routage alterne par GÉNÉRATION de
-    répétition (répétition n°1 à droite, n°2 à gauche, n°3 à
-    droite...), calculé à partir du nombre total d'échantillons
-    écoulés divisé par le temps de delay — pas d'un compteur
-    remis à zéro à chaque bascule (qui déclenchait la bascule
-    dès l'apparition du premier écho au lieu d'attendre qu'il
-    ait fini de jouer). Le réseau de feedback interne reste
-    toujours fixe/stable ; seul le ROUTAGE de sortie alterne, en
-    fondu doux (dont la durée s'adapte au temps de delay, pour
-    ne pas empiéter sur des répétitions très rapprochées en
-    1/16) plutôt qu'en bascule instantanée.
+    Mode ping-pong — v4, simplifié par rapport aux versions
+    précédentes. Au lieu de deux lignes qui se nourrissent l'une
+    l'autre (source d'asymétrie de volume et de complexité), on
+    utilise UNE SEULE ligne mono dédiée (bufferPingPong), stable
+    et classique (aucun branchement conditionnel dans son réseau
+    de feedback -> aucun risque de discontinuité à cet endroit).
+    Le rebond gauche/droite est obtenu en PANORAMIQUANT ce signal
+    unique alternativement à gauche puis à droite, au rythme
+    d'une génération de répétition par côté (répétition 1 à
+    droite, répétition 2 à gauche, etc.), avec un fondu doux à la
+    bascule. Comme c'est le MÊME signal des deux côtés (juste
+    déplacé), les deux côtés ont mathématiquement le même niveau
+    en moyenne — plus de déséquilibre possible par construction.
     ============================================================
 */
 
@@ -33,19 +36,21 @@ public:
     {
         sampleRate = sampleRateIn;
         const int maxDelaySamples = (int) (2.5 * sampleRate);
-        bufferGen.assign ((size_t) maxDelaySamples, 0.0f);
-        bufferFollow.assign ((size_t) maxDelaySamples, 0.0f);
+        bufferL.assign ((size_t) maxDelaySamples, 0.0f);
+        bufferR.assign ((size_t) maxDelaySamples, 0.0f);
+        bufferPingPong.assign ((size_t) maxDelaySamples, 0.0f);
         reset();
     }
 
     void reset()
     {
-        std::fill (bufferGen.begin(), bufferGen.end(), 0.0f);
-        std::fill (bufferFollow.begin(), bufferFollow.end(), 0.0f);
+        std::fill (bufferL.begin(), bufferL.end(), 0.0f);
+        std::fill (bufferR.begin(), bufferR.end(), 0.0f);
+        std::fill (bufferPingPong.begin(), bufferPingPong.end(), 0.0f);
         writePos = 0;
         totalSamplesElapsed = 0.0;
-        genOnLeftTarget = 1.0f;
-        genOnLeftSmoothed = 1.0f;
+        panLeftTarget = 0.0f; // 1ere repetition -> a droite (voir generation ci-dessous)
+        panLeftSmoothed = 0.0f;
     }
 
     /** delayTimeMs déjà résolu (Free ms, ou calculé depuis le tempo côté processeur). */
@@ -56,14 +61,13 @@ public:
         mix = mix01;
         pingPong = pingPongOn;
 
-        // Fondu adaptatif : jamais plus de 15% du temps de delay, plafonné à 25ms,
-        // pour ne pas empiéter sur des répétitions très rapprochées (1/16 rapide).
+        // Fondu adaptatif : jamais plus de 15% du temps de delay, plafonné à 25ms
         crossfadeSamples = std::max (1.0, std::min (0.025 * sampleRate, delayTimeSamples * 0.15));
     }
 
     void processStereo (float* left, float* right, int numSamples)
     {
-        const int bufSize = (int) bufferGen.size();
+        const int bufSize = (int) bufferL.size();
         if (bufSize == 0)
             return;
 
@@ -79,9 +83,6 @@ public:
             const int readIndex1 = (readIndex0 + 1) % bufSize;
             const float frac = (float) (readPos - std::floor (readPos));
 
-            const float delayedGen    = bufferGen[(size_t) readIndex0]    * (1.0f - frac) + bufferGen[(size_t) readIndex1]    * frac;
-            const float delayedFollow = bufferFollow[(size_t) readIndex0] * (1.0f - frac) + bufferFollow[(size_t) readIndex1] * frac;
-
             const float inL = left[i];
             const float inR = right[i];
 
@@ -89,31 +90,36 @@ public:
 
             if (pingPong)
             {
-                // Réseau de feedback FIXE — toujours la même topologie, jamais de rupture ici
-                const float inputMono = 0.5f * (inL + inR);
-                bufferGen[(size_t) writePos]    = inputMono + delayedFollow * feedback;
-                bufferFollow[(size_t) writePos] = delayedGen * feedback;
+                const float delayedMono = bufferPingPong[(size_t) readIndex0] * (1.0f - frac)
+                                         + bufferPingPong[(size_t) readIndex1] * frac;
 
-                // Cible de routage = fonction de la génération de répétition en cours,
-                // pas d'un compteur remis à zéro (qui basculait dès l'apparition du 1er écho)
+                const float inputMono = 0.5f * (inL + inR);
+                bufferPingPong[(size_t) writePos] = inputMono + delayedMono * feedback;
+
+                // Génération de répétition en cours -> détermine le côté cible.
+                // generation impaire (1ere répétition) -> DROITE ; paire -> GAUCHE.
                 totalSamplesElapsed += 1.0;
                 const double generation = std::floor (totalSamplesElapsed / delayTimeSamples);
-                const bool generationIsEven = (std::fmod (generation, 2.0) < 1.0);
-                genOnLeftTarget = generationIsEven ? 1.0f : 0.0f; // gen impaire (1ere répét.) -> droite
+                const bool generationIsOdd = (std::fmod (generation, 2.0) >= 1.0);
+                panLeftTarget = generationIsOdd ? 0.0f : 1.0f;
 
-                // Suivi en douceur de la cible -> zéro discontinuité audible
-                genOnLeftSmoothed += (genOnLeftTarget - genOnLeftSmoothed) * smoothCoeff;
+                panLeftSmoothed += (panLeftTarget - panLeftSmoothed) * smoothCoeff;
 
-                wetL = genOnLeftSmoothed * delayedGen + (1.0f - genOnLeftSmoothed) * delayedFollow;
-                wetR = (1.0f - genOnLeftSmoothed) * delayedGen + genOnLeftSmoothed * delayedFollow;
+                // Même signal des deux côtés, juste pondéré différemment -> pas de
+                // saut de niveau possible entre les deux canaux.
+                wetL = panLeftSmoothed * delayedMono;
+                wetR = (1.0f - panLeftSmoothed) * delayedMono;
             }
             else
             {
-                // Mode normal : L et R indépendants, même temps de delay
-                bufferGen[(size_t) writePos]    = inL + delayedGen * feedback;
-                bufferFollow[(size_t) writePos] = inR + delayedFollow * feedback;
-                wetL = delayedGen;
-                wetR = delayedFollow;
+                const float delayedL = bufferL[(size_t) readIndex0] * (1.0f - frac) + bufferL[(size_t) readIndex1] * frac;
+                const float delayedR = bufferR[(size_t) readIndex0] * (1.0f - frac) + bufferR[(size_t) readIndex1] * frac;
+
+                bufferL[(size_t) writePos] = inL + delayedL * feedback;
+                bufferR[(size_t) writePos] = inR + delayedR * feedback;
+
+                wetL = delayedL;
+                wetR = delayedR;
             }
 
             left[i]  = inL * (1.0f - mix) + wetL * mix;
@@ -132,9 +138,9 @@ private:
     bool pingPong = false;
 
     double totalSamplesElapsed = 0.0;
-    float genOnLeftTarget = 1.0f;
-    float genOnLeftSmoothed = 1.0f;
+    float panLeftTarget = 0.0f;
+    float panLeftSmoothed = 0.0f;
 
-    std::vector<float> bufferGen, bufferFollow;
+    std::vector<float> bufferL, bufferR, bufferPingPong;
     int writePos = 0;
 };

@@ -42,6 +42,7 @@ private:
     void drawPanel (juce::Graphics& g, juce::Rectangle<int> area);
     void updateCompressorLabels();
     void applyPreset (const std::vector<std::pair<juce::String, float>>& values);
+    void applyMasterPreset (int selectedId);
 
     PopVocalAudioProcessor& processorRef;
     PopLookAndFeel lookAndFeel;
@@ -54,6 +55,7 @@ private:
     juce::ComboBox compModeBox;
     juce::ComboBox resBroadPresetBox, resPrecisePresetBox, eqPresetBox, reverbPresetBox;
     juce::ComboBox delayRateBox;
+    juce::ComboBox styleBox; // preset maitre, regle toute la chaine en un clic
     juce::ToggleButton delayPingPongToggle { "Ping-Pong" };
 
     // Bypass actif/inactif par section

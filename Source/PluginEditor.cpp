@@ -133,6 +133,96 @@ void PopVocalAudioProcessorEditor::applyPreset (const std::vector<std::pair<juce
     }
 }
 
+void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
+{
+    // compMode : 0=Agressif(Pop), 1=Doux(ButterComp), 2=Naturel(VariMu)
+    using Preset = std::vector<std::pair<juce::String, float>>;
+
+    Preset values;
+
+    switch (selectedId)
+    {
+        case 2: // Rap
+            values = {
+                {"resBroadActive",1.0f},{"resBroadSensitivity",0.4f},{"resBroadDepth",0.5f},{"resBroadMix",1.0f},
+                {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.5f},{"compP2",1.0f},{"compP3",1.0f},
+                {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
+                {"eqActive",1.0f},{"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},
+                {"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f},{"eqHighCutFreq",10000.0f},
+                {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.3f},{"delayMix",0.15f},{"delayPingPong",0.0f},
+                {"reverbActive",1.0f},{"reverbMix",0.08f},{"reverbSize",0.3f},{"reverbDamping",0.6f}
+            };
+            break;
+
+        case 3: // Pop Lead
+            values = {
+                {"resBroadActive",1.0f},{"resBroadSensitivity",0.35f},{"resBroadDepth",0.4f},{"resBroadMix",1.0f},
+                {"compressorActive",1.0f},{"compMode",2.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
+                {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
+                {"eqActive",1.0f},{"eqLowCutFreq",90.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
+                {"eqMid",-1.0f},{"eqMidFreq",400.0f},{"eqHigh",2.0f},{"eqHighFreq",12000.0f},{"eqHighCutFreq",19000.0f},
+                {"delayActive",1.0f},{"delayRateMode",2.0f},{"delayFeedback",0.25f},{"delayMix",0.15f},{"delayPingPong",0.0f},
+                {"reverbActive",1.0f},{"reverbMix",0.2f},{"reverbSize",0.5f},{"reverbDamping",0.2f}
+            };
+            break;
+
+        case 4: // R&B / Doux
+            values = {
+                {"resBroadActive",1.0f},{"resBroadSensitivity",0.2f},{"resBroadDepth",0.25f},{"resBroadMix",0.8f},
+                {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
+                {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.3f},{"resPreciseDepth",0.15f},{"resPreciseMix",0.7f},
+                {"eqActive",1.0f},{"eqLowCutFreq",80.0f},{"eqLow",3.0f},{"eqLowFreq",120.0f},
+                {"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",16000.0f},
+                {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.35f},{"delayMix",0.2f},{"delayPingPong",1.0f},
+                {"reverbActive",1.0f},{"reverbMix",0.25f},{"reverbSize",0.75f},{"reverbDamping",0.4f}
+            };
+            break;
+
+        case 5: // Podcast / Voix parlee
+            values = {
+                {"resBroadActive",1.0f},{"resBroadSensitivity",0.6f},{"resBroadDepth",0.8f},{"resBroadMix",1.0f},
+                {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.2f},{"compP2",0.5f},{"compP3",0.5f},
+                {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.65f},{"resPreciseDepth",0.5f},{"resPreciseMix",1.0f},
+                {"eqActive",1.0f},{"eqLowCutFreq",150.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
+                {"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",14000.0f},
+                {"delayActive",0.0f},
+                {"reverbActive",0.0f}
+            };
+            break;
+
+        case 6: // Neutre (reset)
+        default:
+            values = {
+                {"resBroadActive",1.0f},{"resBroadSensitivity",0.35f},{"resBroadDepth",0.4f},{"resBroadMix",1.0f},
+                {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.3f},{"compP2",1.0f},{"compP3",1.0f},
+                {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
+                {"eqActive",1.0f},{"eqLowCutFreq",80.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
+                {"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",18000.0f},
+                {"delayActive",1.0f},{"delayRateMode",0.0f},{"delayTime",0.3f},{"delayFeedback",0.3f},{"delayMix",0.0f},{"delayPingPong",0.0f},
+                {"reverbActive",1.0f},{"reverbMix",0.0f},{"reverbSize",0.5f},{"reverbDamping",0.5f}
+            };
+            break;
+    }
+
+    if (values.empty())
+        return;
+
+    applyPreset (values);
+
+    // compMode a été changé via setValueNotifyingHost : l'attachment met à jour
+    // l'affichage du menu de façon asynchrone (pour éviter les boucles de
+    // notification), donc on ne peut pas se fier à compModeBox.getSelectedId()
+    // immédiatement après. On relit directement la valeur qu'on vient d'appliquer.
+    float compModeValue = 0.0f;
+    for (auto& entry : values)
+        if (entry.first == "compMode") { compModeValue = entry.second; break; }
+
+    const int index = juce::jlimit (0, 2, (int) compModeValue);
+    const auto& labels = compressorKnobLabels[(size_t) index];
+    for (int i = 0; i < 3; ++i)
+        compressorSection.knobs[(size_t) i]->label.setText (labels[(size_t) i], juce::dontSendNotification);
+}
+
 PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p), eqCurve (p.apvts),
       inputMeter (p.getInputLevelDb()), outputMeter (p.getOutputLevelDb())
@@ -150,6 +240,16 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
     subtitleLabel.setJustificationType (juce::Justification::centredLeft);
     addAndMakeVisible (subtitleLabel);
+
+    // Preset maitre — regle toute la chaine (compresseur inclus) en un clic
+    styleBox.addItem ("-- Preset maitre --", 1);
+    styleBox.addItem ("Rap", 2);
+    styleBox.addItem ("Pop Lead", 3);
+    styleBox.addItem ("R&B / Doux", 4);
+    styleBox.addItem ("Podcast / Voix", 5);
+    styleBox.addItem ("Neutre (reset)", 6);
+    addAndMakeVisible (styleBox);
+    styleBox.onChange = [this] { applyMasterPreset (styleBox.getSelectedId()); };
 
     auto& apvts = processorRef.apvts;
     auto attach = [&] (juce::Slider& slider, const juce::String& paramId)
@@ -298,9 +398,10 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
         const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLowCutFreq",80.0f}, {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",16000.0f} };
         const std::vector<std::pair<juce::String, float>> brillant   { {"eqLowCutFreq",100.0f},{"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
         const std::vector<std::pair<juce::String, float>> presence   { {"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f}, {"eqHighCutFreq",10000.0f} };
-        // Air : léger creux dans le bas-médium pour désencombrer, shelf haut très étiré
-        // et généreux (~13kHz) pour donner de l'ouverture sans devenir sifflant
-        const std::vector<std::pair<juce::String, float>> air        { {"eqLowCutFreq",90.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqMid",-1.5f},{"eqMidFreq",400.0f},{"eqHigh",4.5f},{"eqHighFreq",13000.0f}, {"eqHighCutFreq",19000.0f} };
+        // Air : léger creux dans le bas-médium pour désencombrer, shelf haut modéré
+        // (~12kHz, +2dB) pour ouvrir la voix sans siffler — ajusté après comparaison
+        // avec les conventions pro (FabFilter recommande plutôt +0.5 à +2dB, pas +4/5dB)
+        const std::vector<std::pair<juce::String, float>> air        { {"eqLowCutFreq",90.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqMid",-1.0f},{"eqMidFreq",400.0f},{"eqHigh",2.0f},{"eqHighFreq",12000.0f}, {"eqHighCutFreq",19000.0f} };
         eqPresetBox.onChange = [this, neutre, chaleureux, brillant, presence, air]
         {
             switch (eqPresetBox.getSelectedId())
@@ -453,8 +554,9 @@ void PopVocalAudioProcessorEditor::paint (juce::Graphics& g)
 
 void PopVocalAudioProcessorEditor::resized()
 {
-    titleLabel.setBounds (24, 14, 500, 30);
+    titleLabel.setBounds (24, 14, 400, 30);
     subtitleLabel.setBounds (24, 44, 600, 16);
+    styleBox.setBounds (getWidth() - 130 - 16 - 220, 20, 220, 26);
 
     auto full = getLocalBounds();
     auto inputStrip  = full.removeFromLeft (130);
