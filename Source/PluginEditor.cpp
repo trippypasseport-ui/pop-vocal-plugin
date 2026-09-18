@@ -192,7 +192,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.5f},{"compP2",1.0f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},
-                {"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f},{"eqHighCutFreq",10000.0f},{"eqAirAmount",0.0f},
+                {"eqHighMid",3.0f},{"eqHighMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f},{"eqHighCutFreq",10000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.3f},{"delayMix",0.15f},{"delayPingPong",0.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.08f},{"reverbSize",0.3f},{"reverbDamping",0.6f}
             };
@@ -204,7 +204,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"compressorActive",1.0f},{"compMode",2.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",90.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
-                {"eqMid",-1.0f},{"eqMidFreq",400.0f},{"eqHigh",2.0f},{"eqHighFreq",12000.0f},{"eqHighCutFreq",19000.0f},{"eqAirAmount",3.5f},
+                {"eqLowMid",-1.0f},{"eqLowMidFreq",400.0f},{"eqHigh",2.0f},{"eqHighFreq",12000.0f},{"eqHighCutFreq",19000.0f},{"eqAirAmount",3.5f},
                 {"delayActive",1.0f},{"delayRateMode",2.0f},{"delayFeedback",0.25f},{"delayMix",0.15f},{"delayPingPong",0.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.2f},{"reverbSize",0.5f},{"reverbDamping",0.2f}
             };
@@ -216,7 +216,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.3f},{"resPreciseDepth",0.15f},{"resPreciseMix",0.7f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",80.0f},{"eqLow",3.0f},{"eqLowFreq",120.0f},
-                {"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",16000.0f},{"eqAirAmount",0.0f},
+                {"eqHighMid",-1.0f},{"eqHighMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",16000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.35f},{"delayMix",0.2f},{"delayPingPong",1.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.25f},{"reverbSize",0.75f},{"reverbDamping",0.4f}
             };
@@ -228,7 +228,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.2f},{"compP2",0.5f},{"compP3",0.5f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.65f},{"resPreciseDepth",0.5f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",150.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
-                {"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",14000.0f},{"eqAirAmount",0.0f},
+                {"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",14000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",0.0f},
                 {"reverbActive",0.0f}
             };
@@ -241,7 +241,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.3f},{"compP2",1.0f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",80.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
-                {"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",18000.0f},{"eqAirAmount",0.0f},
+                {"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",18000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",1.0f},{"delayRateMode",0.0f},{"delayTime",0.3f},{"delayFeedback",0.3f},{"delayMix",0.0f},{"delayPingPong",0.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.0f},{"reverbSize",0.5f},{"reverbDamping",0.5f}
             };
@@ -416,14 +416,12 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (eqActiveToggle);
     eqSection.activeToggle = &eqActiveToggle;
     eqActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "eqActive", eqActiveToggle);
-    eqSection.knobColumns = 5; // 13 knobs -> 3 rangees (5+5+3)
+    eqSection.knobColumns = 4; // 11 knobs -> 3 rangees (4+4+3)
     attach (addKnob (eqSection, "LOW CUT").slider,     "eqLowCutFreq");
     attach (addKnob (eqSection, "LOW").slider,         "eqLow");
     attach (addKnob (eqSection, "LOW FREQ").slider,    "eqLowFreq");
     attach (addKnob (eqSection, "LOW-MID").slider,     "eqLowMid");
     attach (addKnob (eqSection, "LOW-MID FREQ").slider,"eqLowMidFreq");
-    attach (addKnob (eqSection, "MID").slider,         "eqMid");
-    attach (addKnob (eqSection, "MID FREQ").slider,    "eqMidFreq");
     attach (addKnob (eqSection, "HIGH-MID").slider,     "eqHighMid");
     attach (addKnob (eqSection, "HIGH-MID FREQ").slider,"eqHighMidFreq");
     attach (addKnob (eqSection, "HIGH").slider,        "eqHigh");
@@ -457,10 +455,10 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     eqPresetBox.addItem ("Presence Radio", 4);
     addAndMakeVisible (eqPresetBox);
     {
-        const std::vector<std::pair<juce::String, float>> neutre     { {"eqLowCutFreq",80.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
-        const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLowCutFreq",80.0f}, {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",16000.0f} };
-        const std::vector<std::pair<juce::String, float>> brillant   { {"eqLowCutFreq",100.0f},{"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHighMid",1.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
-        const std::vector<std::pair<juce::String, float>> presence   { {"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqLowMid",-1.0f},{"eqLowMidFreq",300.0f},{"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f}, {"eqHighCutFreq",10000.0f} };
+        const std::vector<std::pair<juce::String, float>> neutre     { {"eqLowCutFreq",80.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
+        const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLowCutFreq",80.0f}, {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqLowMid",-1.0f},{"eqLowMidFreq",700.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",16000.0f} };
+        const std::vector<std::pair<juce::String, float>> brillant   { {"eqLowCutFreq",100.0f},{"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",1.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
+        const std::vector<std::pair<juce::String, float>> presence   { {"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqLowMid",-1.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",3.0f},{"eqHighMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f}, {"eqHighCutFreq",10000.0f} };
         eqPresetBox.onChange = [this, neutre, chaleureux, brillant, presence]
         {
             switch (eqPresetBox.getSelectedId())
@@ -723,7 +721,7 @@ void PopVocalAudioProcessorEditor::resized()
         auto curveArea = normalArea.removeFromTop (44);
         eqCurve.setBounds (curveArea.reduced (2, 2));
 
-        const int columns = 5;
+        const int columns = 4;
         const int totalKnobs = (int) eqSection.knobs.size();
         const int rows = (totalKnobs + columns - 1) / columns;
         const int knobRowHeight = normalArea.getHeight() / juce::jmax (1, rows);

@@ -57,8 +57,6 @@ public:
         const float lowFreq     = get ("eqLowFreq", 120.0f);
         const float lowMidGain  = get ("eqLowMid", 0.0f);
         const float lowMidFreq  = get ("eqLowMidFreq", 300.0f);
-        const float midGain     = get ("eqMid", 0.0f);
-        const float midFreq     = get ("eqMidFreq", 1000.0f);
         const float highMidGain = get ("eqHighMid", 0.0f);
         const float highMidFreq = get ("eqHighMidFreq", 3000.0f);
         const float highGain    = get ("eqHigh", 0.0f);
@@ -71,7 +69,6 @@ public:
         auto lowCutC   = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr, lowCutFreq, 0.707f);
         auto lowC      = juce::dsp::IIR::Coefficients<float>::makeLowShelf (sr, lowFreq, 0.707f, juce::Decibels::decibelsToGain (lowGain));
         auto lowMidC   = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sr, lowMidFreq, 1.0f, juce::Decibels::decibelsToGain (lowMidGain));
-        auto midC      = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sr, midFreq, 0.9f, juce::Decibels::decibelsToGain (midGain));
         auto highMidC  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sr, highMidFreq, 1.0f, juce::Decibels::decibelsToGain (highMidGain));
         auto highC     = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sr, highFreq, 0.707f, juce::Decibels::decibelsToGain (highGain));
         auto airDipC   = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sr, 7500.0f, 1.2f, juce::Decibels::decibelsToGain (-(airAmount * 0.4f)));
@@ -90,7 +87,6 @@ public:
             double totalDb = 2.0 * juce::Decibels::gainToDecibels (lowCutC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += juce::Decibels::gainToDecibels (lowC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += juce::Decibels::gainToDecibels (lowMidC->getMagnitudeForFrequency ((double) freq, sr));
-            totalDb += juce::Decibels::gainToDecibels (midC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += juce::Decibels::gainToDecibels (highMidC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += juce::Decibels::gainToDecibels (highC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += juce::Decibels::gainToDecibels (airDipC->getMagnitudeForFrequency ((double) freq, sr));

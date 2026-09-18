@@ -87,8 +87,6 @@ private:
     std::atomic<float>* eqLowFreqParam     = nullptr;
     std::atomic<float>* eqLowMidParam      = nullptr;
     std::atomic<float>* eqLowMidFreqParam  = nullptr;
-    std::atomic<float>* eqMidParam         = nullptr;
-    std::atomic<float>* eqMidFreqParam     = nullptr;
     std::atomic<float>* eqHighMidParam     = nullptr;
     std::atomic<float>* eqHighMidFreqParam = nullptr;
     std::atomic<float>* eqHighParam        = nullptr;

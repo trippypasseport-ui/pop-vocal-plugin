@@ -25,8 +25,6 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     eqLowFreqParam     = apvts.getRawParameterValue ("eqLowFreq");
     eqLowMidParam      = apvts.getRawParameterValue ("eqLowMid");
     eqLowMidFreqParam  = apvts.getRawParameterValue ("eqLowMidFreq");
-    eqMidParam         = apvts.getRawParameterValue ("eqMid");
-    eqMidFreqParam     = apvts.getRawParameterValue ("eqMidFreq");
     eqHighMidParam     = apvts.getRawParameterValue ("eqHighMid");
     eqHighMidFreqParam = apvts.getRawParameterValue ("eqHighMidFreq");
     eqHighParam        = apvts.getRawParameterValue ("eqHigh");
@@ -110,8 +108,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFreq  ("eqLowFreq",  "Low Freq",  40.0f,  400.0f,  120.0f);
     addFloat ("eqLowMid", "Low-Mid Gain", -12.0f, 12.0f, 0.0f);
     addFreq  ("eqLowMidFreq", "Low-Mid Freq", 150.0f, 800.0f, 300.0f);
-    addFloat ("eqMid",  "Mid Gain",  -12.0f, 12.0f, 0.0f);
-    addFreq  ("eqMidFreq",  "Mid Freq",  200.0f, 5000.0f, 1000.0f);
     addFloat ("eqHighMid", "High-Mid Gain", -12.0f, 12.0f, 0.0f);
     addFreq  ("eqHighMidFreq", "High-Mid Freq", 1500.0f, 6000.0f, 3000.0f);
     addFloat ("eqHigh", "High Gain", -12.0f, 12.0f, 0.0f);
@@ -274,7 +270,6 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             eq.setParameters (eqLowCutParam->load(),
                                eqLowParam->load(), eqLowFreqParam->load(),
                                eqLowMidParam->load(), eqLowMidFreqParam->load(),
-                               eqMidParam->load(), eqMidFreqParam->load(),
                                eqHighMidParam->load(), eqHighMidFreqParam->load(),
                                eqHighParam->load(), eqHighFreqParam->load(),
                                eqHighCutParam->load(),
