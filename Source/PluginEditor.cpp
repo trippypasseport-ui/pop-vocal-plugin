@@ -139,6 +139,31 @@ void PopVocalAudioProcessorEditor::updateCompressorLabels()
         compressorSection.knobs[(size_t) i]->label.setText (labels[(size_t) i], juce::dontSendNotification);
 }
 
+void PopVocalAudioProcessorEditor::updateEqModeVisibility()
+{
+    const bool pultec = (eqModeBox.getSelectedId() == 2);
+
+    for (auto& knobPtr : eqSection.knobs)
+    {
+        knobPtr->slider.setVisible (!pultec);
+        knobPtr->label.setVisible (!pultec);
+    }
+    eqCurve.setVisible (!pultec);
+    eqPresetBox.setVisible (!pultec);
+
+    pultecLowFreqBox.setVisible (pultec);
+    pultecHighBoostFreqBox.setVisible (pultec);
+    pultecHighAttenFreqBox.setVisible (pultec);
+    pultecLowFreqLabel.setVisible (pultec);
+    pultecHighBoostFreqLabel.setVisible (pultec);
+    pultecHighAttenFreqLabel.setVisible (pultec);
+    pultecLowBoostKnob.slider.setVisible (pultec);      pultecLowBoostKnob.label.setVisible (pultec);
+    pultecLowAttenKnob.slider.setVisible (pultec);      pultecLowAttenKnob.label.setVisible (pultec);
+    pultecHighBoostKnob.slider.setVisible (pultec);     pultecHighBoostKnob.label.setVisible (pultec);
+    pultecHighBandwidthKnob.slider.setVisible (pultec); pultecHighBandwidthKnob.label.setVisible (pultec);
+    pultecHighAttenKnob.slider.setVisible (pultec);     pultecHighAttenKnob.label.setVisible (pultec);
+}
+
 void PopVocalAudioProcessorEditor::applyPreset (const std::vector<std::pair<juce::String, float>>& values)
 {
     auto& apvts = processorRef.apvts;
@@ -166,7 +191,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.4f},{"resBroadDepth",0.5f},{"resBroadMix",1.0f},
                 {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.5f},{"compP2",1.0f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
-                {"eqActive",1.0f},{"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},
+                {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},
                 {"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f},{"eqHighCutFreq",10000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.3f},{"delayMix",0.15f},{"delayPingPong",0.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.08f},{"reverbSize",0.3f},{"reverbDamping",0.6f}
@@ -178,7 +203,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.35f},{"resBroadDepth",0.4f},{"resBroadMix",1.0f},
                 {"compressorActive",1.0f},{"compMode",2.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
-                {"eqActive",1.0f},{"eqLowCutFreq",90.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
+                {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",90.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
                 {"eqMid",-1.0f},{"eqMidFreq",400.0f},{"eqHigh",2.0f},{"eqHighFreq",12000.0f},{"eqHighCutFreq",19000.0f},{"eqAirAmount",3.5f},
                 {"delayActive",1.0f},{"delayRateMode",2.0f},{"delayFeedback",0.25f},{"delayMix",0.15f},{"delayPingPong",0.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.2f},{"reverbSize",0.5f},{"reverbDamping",0.2f}
@@ -190,7 +215,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.2f},{"resBroadDepth",0.25f},{"resBroadMix",0.8f},
                 {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.3f},{"resPreciseDepth",0.15f},{"resPreciseMix",0.7f},
-                {"eqActive",1.0f},{"eqLowCutFreq",80.0f},{"eqLow",3.0f},{"eqLowFreq",120.0f},
+                {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",80.0f},{"eqLow",3.0f},{"eqLowFreq",120.0f},
                 {"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",16000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.35f},{"delayMix",0.2f},{"delayPingPong",1.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.25f},{"reverbSize",0.75f},{"reverbDamping",0.4f}
@@ -202,7 +227,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.6f},{"resBroadDepth",0.8f},{"resBroadMix",1.0f},
                 {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.2f},{"compP2",0.5f},{"compP3",0.5f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.65f},{"resPreciseDepth",0.5f},{"resPreciseMix",1.0f},
-                {"eqActive",1.0f},{"eqLowCutFreq",150.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
+                {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",150.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
                 {"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",14000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",0.0f},
                 {"reverbActive",0.0f}
@@ -215,7 +240,7 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.35f},{"resBroadDepth",0.4f},{"resBroadMix",1.0f},
                 {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.3f},{"compP2",1.0f},{"compP3",1.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
-                {"eqActive",1.0f},{"eqLowCutFreq",80.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
+                {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",80.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
                 {"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",18000.0f},{"eqAirAmount",0.0f},
                 {"delayActive",1.0f},{"delayRateMode",0.0f},{"delayTime",0.3f},{"delayFeedback",0.3f},{"delayMix",0.0f},{"delayPingPong",0.0f},
                 {"reverbActive",1.0f},{"reverbMix",0.0f},{"reverbSize",0.5f},{"reverbDamping",0.5f}
@@ -386,37 +411,56 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
         };
     }
 
-    // ================= EQ =================
+    // ================= EQ ================= (mise en page custom, voir resized()/paint())
     finishSectionSetup (eqSection, "EQ");
     addAndMakeVisible (eqActiveToggle);
     eqSection.activeToggle = &eqActiveToggle;
     eqActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "eqActive", eqActiveToggle);
-    eqSection.knobColumns = 3; // 8 knobs -> 3 rangees (3+3+2)
-    attach (addKnob (eqSection, "LOW").slider,       "eqLow");
-    attach (addKnob (eqSection, "MID").slider,       "eqMid");
-    attach (addKnob (eqSection, "HIGH").slider,      "eqHigh");
-    attach (addKnob (eqSection, "LOW FREQ").slider,  "eqLowFreq");
-    attach (addKnob (eqSection, "MID FREQ").slider,  "eqMidFreq");
-    attach (addKnob (eqSection, "HIGH FREQ").slider, "eqHighFreq");
-    attach (addKnob (eqSection, "LOW CUT").slider,   "eqLowCutFreq");
-    attach (addKnob (eqSection, "HIGH CUT").slider,  "eqHighCutFreq");
-    attach (addKnob (eqSection, "AIR").slider,       "eqAirAmount");
+    eqSection.knobColumns = 5; // 13 knobs -> 3 rangees (5+5+3)
+    attach (addKnob (eqSection, "LOW CUT").slider,     "eqLowCutFreq");
+    attach (addKnob (eqSection, "LOW").slider,         "eqLow");
+    attach (addKnob (eqSection, "LOW FREQ").slider,    "eqLowFreq");
+    attach (addKnob (eqSection, "LOW-MID").slider,     "eqLowMid");
+    attach (addKnob (eqSection, "LOW-MID FREQ").slider,"eqLowMidFreq");
+    attach (addKnob (eqSection, "MID").slider,         "eqMid");
+    attach (addKnob (eqSection, "MID FREQ").slider,    "eqMidFreq");
+    attach (addKnob (eqSection, "HIGH-MID").slider,     "eqHighMid");
+    attach (addKnob (eqSection, "HIGH-MID FREQ").slider,"eqHighMidFreq");
+    attach (addKnob (eqSection, "HIGH").slider,        "eqHigh");
+    attach (addKnob (eqSection, "HIGH FREQ").slider,   "eqHighFreq");
+    attach (addKnob (eqSection, "HIGH CUT").slider,    "eqHighCutFreq");
+    attach (addKnob (eqSection, "AIR").slider,         "eqAirAmount");
 
     addAndMakeVisible (eqCurve);
-    eqSection.extraDisplay = &eqCurve;
-    eqSection.extraDisplayHeight = 40;
+
+    eqModeBox.addItem ("Normal", 1);
+    eqModeBox.addItem ("Pultec", 2);
+    addAndMakeVisible (eqModeBox);
+    eqModeAttachment = std::make_unique<ComboBoxAttachment> (apvts, "eqMode", eqModeBox);
+    {
+        // Même piège que compModeBox : l'attachment pose déjà son propre onChange
+        // pour synchroniser le paramètre -> on le préserve en le chaînant, sinon
+        // le combo affiche le bon mode mais le processeur audio reste bloqué sur
+        // l'ancien (le paramètre "eqMode" ne serait jamais mis à jour).
+        auto attachmentOnChange = eqModeBox.onChange;
+        eqModeBox.onChange = [this, attachmentOnChange]
+        {
+            if (attachmentOnChange)
+                attachmentOnChange();
+            updateEqModeVisibility();
+        };
+    }
 
     eqPresetBox.addItem ("Neutre", 1);
     eqPresetBox.addItem ("Chaleureux", 2);
     eqPresetBox.addItem ("Brillant", 3);
     eqPresetBox.addItem ("Presence Radio", 4);
     addAndMakeVisible (eqPresetBox);
-    eqSection.comboBox = &eqPresetBox;
     {
-        const std::vector<std::pair<juce::String, float>> neutre     { {"eqLowCutFreq",80.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
-        const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLowCutFreq",80.0f}, {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",16000.0f} };
-        const std::vector<std::pair<juce::String, float>> brillant   { {"eqLowCutFreq",100.0f},{"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
-        const std::vector<std::pair<juce::String, float>> presence   { {"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f}, {"eqHighCutFreq",10000.0f} };
+        const std::vector<std::pair<juce::String, float>> neutre     { {"eqLowCutFreq",80.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
+        const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLowCutFreq",80.0f}, {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",16000.0f} };
+        const std::vector<std::pair<juce::String, float>> brillant   { {"eqLowCutFreq",100.0f},{"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHighMid",1.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
+        const std::vector<std::pair<juce::String, float>> presence   { {"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqLowMid",-1.0f},{"eqLowMidFreq",300.0f},{"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f}, {"eqHighCutFreq",10000.0f} };
         eqPresetBox.onChange = [this, neutre, chaleureux, brillant, presence]
         {
             switch (eqPresetBox.getSelectedId())
@@ -429,6 +473,45 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
             }
         };
     }
+
+    // ---- Pultec : fréquences par crans + boost/atten ----
+    auto setupPultecFreqCombo = [this] (juce::ComboBox& box, juce::Label& label, const juce::String& text,
+                                         const juce::StringArray& items)
+    {
+        for (int i = 0; i < items.size(); ++i) box.addItem (items[i], i + 1);
+        addAndMakeVisible (box);
+        label.setText (text, juce::dontSendNotification);
+        label.setFont (juce::Font (10.0f, juce::Font::bold));
+        label.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
+        label.setJustificationType (juce::Justification::centred);
+        addAndMakeVisible (label);
+    };
+    setupPultecFreqCombo (pultecLowFreqBox, pultecLowFreqLabel, "LOW FREQ", { "20Hz","30Hz","60Hz","100Hz" });
+    setupPultecFreqCombo (pultecHighBoostFreqBox, pultecHighBoostFreqLabel, "HIGH BOOST FREQ", { "3kHz","4kHz","5kHz","8kHz","10kHz","12kHz","16kHz" });
+    setupPultecFreqCombo (pultecHighAttenFreqBox, pultecHighAttenFreqLabel, "HIGH ATTEN FREQ", { "5kHz","10kHz","20kHz" });
+    pultecLowFreqAttachment       = std::make_unique<ComboBoxAttachment> (apvts, "pultecLowFreq", pultecLowFreqBox);
+    pultecHighBoostFreqAttachment = std::make_unique<ComboBoxAttachment> (apvts, "pultecHighBoostFreq", pultecHighBoostFreqBox);
+    pultecHighAttenFreqAttachment = std::make_unique<ComboBoxAttachment> (apvts, "pultecHighAttenFreq", pultecHighAttenFreqBox);
+
+    auto setupPultecKnob = [this, &attach] (Knob& knob, const juce::String& name, const juce::String& paramId)
+    {
+        knob.slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+        knob.slider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 52, 16);
+        addAndMakeVisible (knob.slider);
+        knob.label.setText (name, juce::dontSendNotification);
+        knob.label.setFont (juce::Font (10.0f, juce::Font::bold));
+        knob.label.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
+        knob.label.setJustificationType (juce::Justification::centred);
+        addAndMakeVisible (knob.label);
+        attach (knob.slider, paramId);
+    };
+    setupPultecKnob (pultecLowBoostKnob,      "LOW BOOST",      "pultecLowBoost");
+    setupPultecKnob (pultecLowAttenKnob,      "LOW ATTEN",      "pultecLowAtten");
+    setupPultecKnob (pultecHighBoostKnob,     "HIGH BOOST",     "pultecHighBoost");
+    setupPultecKnob (pultecHighBandwidthKnob, "HIGH BANDWIDTH", "pultecHighBandwidth");
+    setupPultecKnob (pultecHighAttenKnob,     "HIGH ATTEN",     "pultecHighAtten");
+
+    updateEqModeVisibility();
 
     // ================= DELAY =================
     finishSectionSetup (delaySection, "DELAY");
@@ -534,12 +617,17 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (outputCeilingLabel);
     attach (outputCeilingSlider, "outputCeiling");
 
-    setSize (1300, 760);
+    setSize (1300, 900); // EQ pleine largeur (mode Normal 13 knobs + Pultec) a fait grandir la fenetre
 }
 
 PopVocalAudioProcessorEditor::~PopVocalAudioProcessorEditor()
 {
     setLookAndFeel (nullptr);
+}
+
+namespace
+{
+    constexpr int eqRowHeight = 300;
 }
 
 void PopVocalAudioProcessorEditor::paint (juce::Graphics& g)
@@ -562,6 +650,10 @@ void PopVocalAudioProcessorEditor::paint (juce::Graphics& g)
     drawPanel (g, outputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0));
 
     auto content = full.reduced (24, 0).withTop (86).withBottom (getHeight() - 24);
+
+    drawPanel (g, content.removeFromTop (eqRowHeight));
+    content.removeFromTop (16);
+
     const int rowHeight = content.getHeight() / 2 - 8;
     const int colWidth  = (content.getWidth() - 2 * 16) / 3;
 
@@ -586,7 +678,6 @@ void PopVocalAudioProcessorEditor::resized()
     auto inputStrip  = full.removeFromLeft (130);
     auto outputStrip = full.removeFromRight (130);
 
-    // --- Tranche INPUT ---
     {
         auto area = inputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0);
         area.reduce (8, 6);
@@ -597,7 +688,6 @@ void PopVocalAudioProcessorEditor::resized()
         inputGainSlider.setBounds (gainArea.reduced (4, 0));
     }
 
-    // --- Tranche OUTPUT ---
     {
         auto area = outputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0);
         area.reduce (8, 6);
@@ -613,8 +703,92 @@ void PopVocalAudioProcessorEditor::resized()
         outputCeilingSlider.setBounds (gainArea.reduced (2, 0));
     }
 
-    // --- Grille 3x2 de la chaîne, au centre ---
     auto content = full.reduced (24, 0).withTop (86).withBottom (getHeight() - 24);
+
+    {
+        auto area = content.removeFromTop (eqRowHeight);
+        content.removeFromTop (16);
+
+        area.reduce (10, 6);
+        auto titleRow = area.removeFromTop (18);
+        eqActiveToggle.setBounds (titleRow.removeFromRight (46));
+        eqSection.titleLabel.setBounds (titleRow);
+
+        auto controlRow = area.removeFromTop (24);
+        eqModeBox.setBounds (controlRow.removeFromLeft (140));
+        controlRow.removeFromLeft (8);
+        eqPresetBox.setBounds (controlRow.removeFromLeft (180));
+
+        auto normalArea = area;
+        auto curveArea = normalArea.removeFromTop (44);
+        eqCurve.setBounds (curveArea.reduced (2, 2));
+
+        const int columns = 5;
+        const int totalKnobs = (int) eqSection.knobs.size();
+        const int rows = (totalKnobs + columns - 1) / columns;
+        const int knobRowHeight = normalArea.getHeight() / juce::jmax (1, rows);
+
+        for (int r = 0; r < rows; ++r)
+        {
+            auto rowArea = normalArea.removeFromTop (knobRowHeight);
+            const int knobsInRow = juce::jmin (columns, totalKnobs - r * columns);
+            const int knobWidth = rowArea.getWidth() / columns;
+            for (int c = 0; c < knobsInRow; ++c)
+            {
+                auto cell = rowArea.withX (rowArea.getX() + c * knobWidth).withWidth (knobWidth);
+                auto& knob = *eqSection.knobs[(size_t) (r * columns + c)];
+                knob.label.setBounds (cell.removeFromTop (14));
+                knob.slider.setBounds (cell.reduced (4, 2));
+            }
+        }
+
+        auto pultecArea = area;
+        const int pultecCols = 8;
+        const int pultecColWidth = pultecArea.getWidth() / pultecCols;
+        auto takeCell = [&] () { return pultecArea.removeFromLeft (pultecColWidth); };
+
+        {
+            auto cell = takeCell();
+            pultecLowFreqLabel.setBounds (cell.removeFromTop (14));
+            pultecLowFreqBox.setBounds (cell.reduced (4, 6).withHeight (24));
+        }
+        {
+            auto cell = takeCell();
+            pultecLowBoostKnob.label.setBounds (cell.removeFromTop (14));
+            pultecLowBoostKnob.slider.setBounds (cell.reduced (4, 2));
+        }
+        {
+            auto cell = takeCell();
+            pultecLowAttenKnob.label.setBounds (cell.removeFromTop (14));
+            pultecLowAttenKnob.slider.setBounds (cell.reduced (4, 2));
+        }
+        {
+            auto cell = takeCell();
+            pultecHighBoostFreqLabel.setBounds (cell.removeFromTop (14));
+            pultecHighBoostFreqBox.setBounds (cell.reduced (4, 6).withHeight (24));
+        }
+        {
+            auto cell = takeCell();
+            pultecHighBoostKnob.label.setBounds (cell.removeFromTop (14));
+            pultecHighBoostKnob.slider.setBounds (cell.reduced (4, 2));
+        }
+        {
+            auto cell = takeCell();
+            pultecHighBandwidthKnob.label.setBounds (cell.removeFromTop (14));
+            pultecHighBandwidthKnob.slider.setBounds (cell.reduced (4, 2));
+        }
+        {
+            auto cell = takeCell();
+            pultecHighAttenFreqLabel.setBounds (cell.removeFromTop (14));
+            pultecHighAttenFreqBox.setBounds (cell.reduced (4, 6).withHeight (24));
+        }
+        {
+            auto cell = takeCell();
+            pultecHighAttenKnob.label.setBounds (cell.removeFromTop (14));
+            pultecHighAttenKnob.slider.setBounds (cell.reduced (4, 2));
+        }
+    }
+
     const int rowHeight = content.getHeight() / 2 - 8;
     const int colWidth  = (content.getWidth() - 2 * 16) / 3;
 
@@ -626,8 +800,6 @@ void PopVocalAudioProcessorEditor::resized()
     layoutSection ({ x, content.getY(), colWidth, rowHeight }, resPreciseSection);
 
     x = content.getX();
-    layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, eqSection);
-    x += colWidth + 16;
     layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, delaySection);
     x += colWidth + 16;
     layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, reverbSection);

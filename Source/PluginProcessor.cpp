@@ -20,15 +20,29 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     resPreciseDepthParam       = apvts.getRawParameterValue ("resPreciseDepth");
     resPreciseMixParam         = apvts.getRawParameterValue ("resPreciseMix");
 
-    eqLowCutParam   = apvts.getRawParameterValue ("eqLowCutFreq");
-    eqLowParam      = apvts.getRawParameterValue ("eqLow");
-    eqLowFreqParam  = apvts.getRawParameterValue ("eqLowFreq");
-    eqMidParam      = apvts.getRawParameterValue ("eqMid");
-    eqMidFreqParam  = apvts.getRawParameterValue ("eqMidFreq");
-    eqHighParam     = apvts.getRawParameterValue ("eqHigh");
-    eqHighFreqParam = apvts.getRawParameterValue ("eqHighFreq");
-    eqHighCutParam  = apvts.getRawParameterValue ("eqHighCutFreq");
-    eqAirAmountParam = apvts.getRawParameterValue ("eqAirAmount");
+    eqLowCutParam      = apvts.getRawParameterValue ("eqLowCutFreq");
+    eqLowParam         = apvts.getRawParameterValue ("eqLow");
+    eqLowFreqParam     = apvts.getRawParameterValue ("eqLowFreq");
+    eqLowMidParam      = apvts.getRawParameterValue ("eqLowMid");
+    eqLowMidFreqParam  = apvts.getRawParameterValue ("eqLowMidFreq");
+    eqMidParam         = apvts.getRawParameterValue ("eqMid");
+    eqMidFreqParam     = apvts.getRawParameterValue ("eqMidFreq");
+    eqHighMidParam     = apvts.getRawParameterValue ("eqHighMid");
+    eqHighMidFreqParam = apvts.getRawParameterValue ("eqHighMidFreq");
+    eqHighParam        = apvts.getRawParameterValue ("eqHigh");
+    eqHighFreqParam    = apvts.getRawParameterValue ("eqHighFreq");
+    eqHighCutParam     = apvts.getRawParameterValue ("eqHighCutFreq");
+    eqAirAmountParam   = apvts.getRawParameterValue ("eqAirAmount");
+
+    eqModeParam = apvts.getRawParameterValue ("eqMode");
+    pultecLowFreqParam       = apvts.getRawParameterValue ("pultecLowFreq");
+    pultecLowBoostParam      = apvts.getRawParameterValue ("pultecLowBoost");
+    pultecLowAttenParam      = apvts.getRawParameterValue ("pultecLowAtten");
+    pultecHighBoostFreqParam = apvts.getRawParameterValue ("pultecHighBoostFreq");
+    pultecHighBoostParam     = apvts.getRawParameterValue ("pultecHighBoost");
+    pultecHighBandwidthParam = apvts.getRawParameterValue ("pultecHighBandwidth");
+    pultecHighAttenFreqParam = apvts.getRawParameterValue ("pultecHighAttenFreq");
+    pultecHighAttenParam     = apvts.getRawParameterValue ("pultecHighAtten");
 
     delayTimeParam     = apvts.getRawParameterValue ("delayTime");
     delayRateModeParam = apvts.getRawParameterValue ("delayRateMode");
@@ -90,16 +104,38 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("resPreciseDepth",       "Precise Depth",       0.0f, 1.0f, 0.3f);
     addFloat ("resPreciseMix",         "Precise Mix",         0.0f, 1.0f, 1.0f);
 
-    // EQ — coupe-bas, gain ET fréquence par bande, coupe-haut
+    // EQ — coupe-bas, gain ET fréquence sur chaque bande, coupe-haut
     addFreq  ("eqLowCutFreq", "Low Cut", 20.0f, 500.0f, 80.0f);
     addFloat ("eqLow",  "Low Gain",  -12.0f, 12.0f, 0.0f);
     addFreq  ("eqLowFreq",  "Low Freq",  40.0f,  400.0f,  120.0f);
+    addFloat ("eqLowMid", "Low-Mid Gain", -12.0f, 12.0f, 0.0f);
+    addFreq  ("eqLowMidFreq", "Low-Mid Freq", 150.0f, 800.0f, 300.0f);
     addFloat ("eqMid",  "Mid Gain",  -12.0f, 12.0f, 0.0f);
     addFreq  ("eqMidFreq",  "Mid Freq",  200.0f, 5000.0f, 1000.0f);
+    addFloat ("eqHighMid", "High-Mid Gain", -12.0f, 12.0f, 0.0f);
+    addFreq  ("eqHighMidFreq", "High-Mid Freq", 1500.0f, 6000.0f, 3000.0f);
     addFloat ("eqHigh", "High Gain", -12.0f, 12.0f, 0.0f);
     addFreq  ("eqHighFreq", "High Freq", 2000.0f, 16000.0f, 8000.0f);
     addFreq  ("eqHighCutFreq", "High Cut", 2000.0f, 20000.0f, 18000.0f);
     addFloat ("eqAirAmount", "Air", 0.0f, 6.0f, 0.0f);
+
+    // Mode EQ : Normal (bandes paramétriques ci-dessus) ou Pultec
+    params.push_back (std::make_unique<juce::AudioParameterChoice> (
+        "eqMode", "EQ Mode", juce::StringArray { "Normal", "Pultec" }, 0));
+
+    // Pultec — fréquences par crans (index), comme l'original
+    params.push_back (std::make_unique<juce::AudioParameterChoice> (
+        "pultecLowFreq", "Pultec Low Freq", juce::StringArray { "20Hz", "30Hz", "60Hz", "100Hz" }, 2));
+    addFloat ("pultecLowBoost", "Pultec Low Boost", 0.0f, 10.0f, 0.0f);
+    addFloat ("pultecLowAtten", "Pultec Low Atten", 0.0f, 10.0f, 0.0f);
+    params.push_back (std::make_unique<juce::AudioParameterChoice> (
+        "pultecHighBoostFreq", "Pultec High Boost Freq",
+        juce::StringArray { "3kHz", "4kHz", "5kHz", "8kHz", "10kHz", "12kHz", "16kHz" }, 3));
+    addFloat ("pultecHighBoost", "Pultec High Boost", 0.0f, 10.0f, 0.0f);
+    addFloat ("pultecHighBandwidth", "Pultec High Bandwidth", 0.0f, 1.0f, 0.5f);
+    params.push_back (std::make_unique<juce::AudioParameterChoice> (
+        "pultecHighAttenFreq", "Pultec High Atten Freq", juce::StringArray { "5kHz", "10kHz", "20kHz" }, 1));
+    addFloat ("pultecHighAtten", "Pultec High Atten", 0.0f, 10.0f, 0.0f);
 
     // Delay — sync tempo + ping-pong
     addFloat ("delayTime", "Time (Free)", 0.0f, 1.0f, 0.3f);
@@ -146,6 +182,7 @@ void PopVocalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
         algo->prepare (sampleRate);
 
     eq.prepare (sampleRate);
+    pultecEq.prepare (sampleRate);
     delay.prepare (sampleRate, samplesPerBlock);
     reverb.prepare (sampleRate, samplesPerBlock);
     outputLimiter.prepare (sampleRate);
@@ -160,6 +197,7 @@ void PopVocalAudioProcessor::releaseResources()
         algo->reset();
 
     eq.reset();
+    pultecEq.reset();
     delay.reset();
     reverb.reset();
     outputLimiter.reset();
@@ -218,16 +256,31 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         resonancePrecise.processStereo (left, right, numSamples);
     }
 
-    // 4. EQ
+    // 4. EQ — mode Normal ou Pultec, selon eqMode
     if (eqActiveParam->load() > 0.5f)
     {
-        eq.setParameters (eqLowCutParam->load(),
-                           eqLowParam->load(), eqLowFreqParam->load(),
-                           eqMidParam->load(), eqMidFreqParam->load(),
-                           eqHighParam->load(), eqHighFreqParam->load(),
-                           eqHighCutParam->load(),
-                           eqAirAmountParam->load());
-        eq.processStereo (left, right, numSamples);
+        const bool pultecMode = (int) eqModeParam->load() >= 1;
+        if (pultecMode)
+        {
+            pultecEq.setParameters ((int) pultecLowFreqParam->load(),
+                                     pultecLowBoostParam->load(), pultecLowAttenParam->load(),
+                                     (int) pultecHighBoostFreqParam->load(), pultecHighBoostParam->load(),
+                                     pultecHighBandwidthParam->load(),
+                                     (int) pultecHighAttenFreqParam->load(), pultecHighAttenParam->load());
+            pultecEq.processStereo (left, right, numSamples);
+        }
+        else
+        {
+            eq.setParameters (eqLowCutParam->load(),
+                               eqLowParam->load(), eqLowFreqParam->load(),
+                               eqLowMidParam->load(), eqLowMidFreqParam->load(),
+                               eqMidParam->load(), eqMidFreqParam->load(),
+                               eqHighMidParam->load(), eqHighMidFreqParam->load(),
+                               eqHighParam->load(), eqHighFreqParam->load(),
+                               eqHighCutParam->load(),
+                               eqAirAmountParam->load());
+            eq.processStereo (left, right, numSamples);
+        }
     }
 
     // 5. Delay — temps résolu depuis le tempo hôte si un mode synchronisé est choisi

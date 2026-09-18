@@ -44,6 +44,7 @@ private:
     void updateCompressorLabels();
     void applyPreset (const std::vector<std::pair<juce::String, float>>& values);
     void applyMasterPreset (int selectedId);
+    void updateEqModeVisibility();
 
     PopVocalAudioProcessor& processorRef;
     PopLookAndFeel lookAndFeel;
@@ -57,7 +58,14 @@ private:
     juce::ComboBox resBroadPresetBox, resPrecisePresetBox, eqPresetBox, reverbPresetBox;
     juce::ComboBox delayRateBox;
     juce::ComboBox styleBox; // preset maitre, regle toute la chaine en un clic
+    juce::ComboBox eqModeBox; // Normal / Pultec
     juce::ToggleButton delayPingPongToggle { "Ping-Pong" };
+
+    // Pultec — contrôles dédiés (fréquences par crans + boost/atten), affichés
+    // seulement quand eqModeBox = Pultec
+    juce::ComboBox pultecLowFreqBox, pultecHighBoostFreqBox, pultecHighAttenFreqBox;
+    juce::Label pultecLowFreqLabel, pultecHighBoostFreqLabel, pultecHighAttenFreqLabel;
+    Knob pultecLowBoostKnob, pultecLowAttenKnob, pultecHighBoostKnob, pultecHighBandwidthKnob, pultecHighAttenKnob;
 
     // Bypass actif/inactif par section
     juce::ToggleButton resBroadActiveToggle { "" }, compressorActiveToggle { "" }, resPreciseActiveToggle { "" };
@@ -80,6 +88,8 @@ private:
     std::unique_ptr<ButtonAttachment> delayPingPongAttachment;
     std::unique_ptr<ButtonAttachment> resBroadActiveAttachment, compressorActiveAttachment, resPreciseActiveAttachment;
     std::unique_ptr<ButtonAttachment> eqActiveAttachment, delayActiveAttachment, reverbActiveAttachment;
+    std::unique_ptr<ComboBoxAttachment> eqModeAttachment;
+    std::unique_ptr<ComboBoxAttachment> pultecLowFreqAttachment, pultecHighBoostFreqAttachment, pultecHighAttenFreqAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PopVocalAudioProcessorEditor)
 };

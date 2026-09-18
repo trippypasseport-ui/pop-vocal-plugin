@@ -6,6 +6,7 @@
 #include "VariMuCompressor.h"
 #include "ResonanceSuppressor.h"
 #include "ParametricEQ.h"
+#include "PultecEQ.h"
 #include "DelayModule.h"
 #include "ReverbModule.h"
 #include "OutputLimiter.h"
@@ -63,6 +64,7 @@ private:
     std::array<ICompressorAlgorithm*, 3> compressorAlgorithms { &compAgressif, &compDoux, &compNaturel };
 
     ParametricEQ eq;
+    PultecEQ pultecEq;
     DelayModule delay;
     ReverbModule reverb;
     OutputLimiter outputLimiter;
@@ -80,15 +82,29 @@ private:
     std::atomic<float>* resPreciseDepthParam       = nullptr;
     std::atomic<float>* resPreciseMixParam         = nullptr;
 
-    std::atomic<float>* eqLowCutParam   = nullptr;
-    std::atomic<float>* eqLowParam      = nullptr;
-    std::atomic<float>* eqLowFreqParam  = nullptr;
-    std::atomic<float>* eqMidParam      = nullptr;
-    std::atomic<float>* eqMidFreqParam  = nullptr;
-    std::atomic<float>* eqHighParam     = nullptr;
-    std::atomic<float>* eqHighFreqParam = nullptr;
-    std::atomic<float>* eqHighCutParam  = nullptr;
-    std::atomic<float>* eqAirAmountParam = nullptr;
+    std::atomic<float>* eqLowCutParam      = nullptr;
+    std::atomic<float>* eqLowParam         = nullptr;
+    std::atomic<float>* eqLowFreqParam     = nullptr;
+    std::atomic<float>* eqLowMidParam      = nullptr;
+    std::atomic<float>* eqLowMidFreqParam  = nullptr;
+    std::atomic<float>* eqMidParam         = nullptr;
+    std::atomic<float>* eqMidFreqParam     = nullptr;
+    std::atomic<float>* eqHighMidParam     = nullptr;
+    std::atomic<float>* eqHighMidFreqParam = nullptr;
+    std::atomic<float>* eqHighParam        = nullptr;
+    std::atomic<float>* eqHighFreqParam    = nullptr;
+    std::atomic<float>* eqHighCutParam     = nullptr;
+    std::atomic<float>* eqAirAmountParam   = nullptr;
+
+    std::atomic<float>* eqModeParam = nullptr; // 0 = Normal, 1 = Pultec
+    std::atomic<float>* pultecLowFreqParam        = nullptr;
+    std::atomic<float>* pultecLowBoostParam       = nullptr;
+    std::atomic<float>* pultecLowAttenParam       = nullptr;
+    std::atomic<float>* pultecHighBoostFreqParam  = nullptr;
+    std::atomic<float>* pultecHighBoostParam      = nullptr;
+    std::atomic<float>* pultecHighBandwidthParam  = nullptr;
+    std::atomic<float>* pultecHighAttenFreqParam  = nullptr;
+    std::atomic<float>* pultecHighAttenParam      = nullptr;
 
     std::atomic<float>* delayTimeParam     = nullptr; // utilisé seulement en mode "Free"
     std::atomic<float>* delayRateModeParam = nullptr; // 0=Free,1=1/2,2=1/4,3=1/8,4=1/16
