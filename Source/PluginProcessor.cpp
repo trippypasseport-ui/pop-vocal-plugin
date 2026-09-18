@@ -42,6 +42,7 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
 
     inputGainParam  = apvts.getRawParameterValue ("inputGain");
     outputGainParam = apvts.getRawParameterValue ("outputGain");
+    outputCeilingParam = apvts.getRawParameterValue ("outputCeiling");
 
     resBroadActiveParam   = apvts.getRawParameterValue ("resBroadActive");
     compressorActiveParam = apvts.getRawParameterValue ("compressorActive");
@@ -117,6 +118,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     // Entrée / Sortie — gain de tranche, mesuré par les mètres de niveau
     addFloat ("inputGain",  "Input Gain",  -24.0f, 24.0f, 0.0f);
     addFloat ("outputGain", "Output Gain", -24.0f, 24.0f, 0.0f);
+    addFloat ("outputCeiling", "Ceiling", -12.0f, 0.0f, -0.3f);
 
     // Bypass par section (tous actifs par défaut)
     auto addBool = [&params] (const juce::String& id, const juce::String& name)
@@ -146,6 +148,7 @@ void PopVocalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     eq.prepare (sampleRate);
     delay.prepare (sampleRate, samplesPerBlock);
     reverb.prepare (sampleRate, samplesPerBlock);
+    outputLimiter.prepare (sampleRate);
 }
 
 void PopVocalAudioProcessor::releaseResources()
@@ -159,6 +162,7 @@ void PopVocalAudioProcessor::releaseResources()
     eq.reset();
     delay.reset();
     reverb.reset();
+    outputLimiter.reset();
 }
 
 bool PopVocalAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -272,8 +276,10 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         reverb.processStereo (left, right, numSamples);
     }
 
-    // 7. Gain de sortie + mètre (après tout traitement)
+    // 7. Gain de sortie + limiteur de sécurité + mètre (après tout traitement)
     buffer.applyGain (juce::Decibels::decibelsToGain (outputGainParam->load()));
+    outputLimiter.setCeilingDb (outputCeilingParam->load());
+    outputLimiter.processStereo (left, right, numSamples);
     {
         const float peak = buffer.getMagnitude (0, numSamples);
         const float peakDb = juce::Decibels::gainToDecibels (peak, -60.0f);

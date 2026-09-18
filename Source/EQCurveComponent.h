@@ -73,7 +73,7 @@ public:
         const float midFreq  = midFreqParam->load();
         const float highFreq = highFreqParam->load();
         const float highCutFreq = highCutParam->load();
-        const float airAmountDb = airParam->load();
+        const float airAmount = airParam->load();
 
         // Sample rate de référence pour le tracé — la réponse d'un shelf/peak
         // en dB ne dépend quasiment pas du sample rate choisi ici tant qu'il
@@ -89,8 +89,10 @@ public:
         auto highCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             displaySampleRate, highFreq, 0.707f, juce::Decibels::decibelsToGain (highGain));
         auto highCutCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowPass (displaySampleRate, highCutFreq, 0.707f);
-        auto airCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (displaySampleRate, 12000.0f, 0.707f,
-                                                                               juce::Decibels::decibelsToGain (airAmountDb));
+        auto airDipCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter (displaySampleRate, 7500.0f, 1.2f,
+                                                                                  juce::Decibels::decibelsToGain (-(airAmount * 0.4f)));
+        auto airCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (displaySampleRate, 15000.0f, 0.707f,
+                                                                               juce::Decibels::decibelsToGain (airAmount));
 
         juce::Path curve;
         constexpr int numPoints = 128;
@@ -107,12 +109,14 @@ public:
             const double magHigh = highCoeffs->getMagnitudeForFrequency ((double) freq, displaySampleRate);
             const double magHighCut = highCutCoeffs->getMagnitudeForFrequency ((double) freq, displaySampleRate);
             const double magAir = airCoeffs->getMagnitudeForFrequency ((double) freq, displaySampleRate);
+            const double magAirDip = airDipCoeffs->getMagnitudeForFrequency ((double) freq, displaySampleRate);
 
             const double totalDb = 2.0 * juce::Decibels::gainToDecibels (magLowCut)   // 2 étages en cascade
                                   + juce::Decibels::gainToDecibels (magLow)
                                   + juce::Decibels::gainToDecibels (magMid)
                                   + juce::Decibels::gainToDecibels (magHigh)
                                   + juce::Decibels::gainToDecibels (magAir)
+                                  + juce::Decibels::gainToDecibels (magAirDip)
                                   + 2.0 * juce::Decibels::gainToDecibels (magHighCut); // 2 étages en cascade
 
             const float x = bounds.getX() + t * bounds.getWidth();

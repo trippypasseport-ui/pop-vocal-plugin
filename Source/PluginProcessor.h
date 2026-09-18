@@ -8,6 +8,7 @@
 #include "ParametricEQ.h"
 #include "DelayModule.h"
 #include "ReverbModule.h"
+#include "OutputLimiter.h"
 #include <array>
 
 class PopVocalAudioProcessor : public juce::AudioProcessor
@@ -64,6 +65,7 @@ private:
     ParametricEQ eq;
     DelayModule delay;
     ReverbModule reverb;
+    OutputLimiter outputLimiter;
 
     std::atomic<float>* resBroadSensitivityParam = nullptr;
     std::atomic<float>* resBroadDepthParam       = nullptr;
@@ -100,6 +102,7 @@ private:
 
     std::atomic<float>* inputGainParam  = nullptr;
     std::atomic<float>* outputGainParam = nullptr;
+    std::atomic<float>* outputCeilingParam = nullptr;
     std::atomic<float> inputLevelDb  { -60.0f };
     std::atomic<float> outputLevelDb { -60.0f };
     double currentSampleRate = 44100.0;

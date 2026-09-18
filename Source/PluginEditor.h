@@ -67,8 +67,8 @@ private:
 
     // Entrée / Sortie — mètres + gain de tranche, en bordure gauche/droite
     juce::Label inputTitleLabel, outputTitleLabel;
-    juce::Slider inputGainSlider, outputGainSlider;
-    juce::Label inputGainLabel, outputGainLabel;
+    juce::Slider inputGainSlider, outputGainSlider, outputCeilingSlider;
+    juce::Label inputGainLabel, outputGainLabel, outputCeilingLabel;
     LevelMeter inputMeter, outputMeter;
 
     using SliderAttachment      = juce::AudioProcessorValueTreeState::SliderAttachment;

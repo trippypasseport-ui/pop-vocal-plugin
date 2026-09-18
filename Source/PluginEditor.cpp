@@ -524,6 +524,16 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (outputGainLabel);
     attach (outputGainSlider, "outputGain");
 
+    outputCeilingSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    outputCeilingSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 56, 16);
+    addAndMakeVisible (outputCeilingSlider);
+    outputCeilingLabel.setText ("CEILING", juce::dontSendNotification);
+    outputCeilingLabel.setFont (juce::Font (10.0f, juce::Font::bold));
+    outputCeilingLabel.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
+    outputCeilingLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (outputCeilingLabel);
+    attach (outputCeilingSlider, "outputCeiling");
+
     setSize (1300, 760);
 }
 
@@ -593,9 +603,14 @@ void PopVocalAudioProcessorEditor::resized()
         area.reduce (8, 6);
         outputTitleLabel.setBounds (area.removeFromTop (18));
         auto gainArea = area.removeFromBottom (78);
-        outputMeter.setBounds (area.reduced (30, 4));
-        outputGainLabel.setBounds (gainArea.removeFromTop (14));
-        outputGainSlider.setBounds (gainArea.reduced (4, 0));
+        outputMeter.setBounds (area.reduced (10, 4));
+
+        auto gainCell = gainArea.removeFromLeft (gainArea.getWidth() / 2);
+        outputGainLabel.setBounds (gainCell.removeFromTop (14));
+        outputGainSlider.setBounds (gainCell.reduced (2, 0));
+
+        outputCeilingLabel.setBounds (gainArea.removeFromTop (14));
+        outputCeilingSlider.setBounds (gainArea.reduced (2, 0));
     }
 
     // --- Grille 3x2 de la chaîne, au centre ---
