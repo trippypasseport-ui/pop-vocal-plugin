@@ -43,8 +43,10 @@ void PopVocalAudioProcessorEditor::layoutSection (juce::Rectangle<int> area, Sec
     area.reduce (10, 6);
     section.titleLabel.setBounds (area.removeFromTop (18));
 
-    if (section.comboBox != nullptr)
-        section.comboBox->setBounds (area.removeFromTop (22).reduced (2, 0));
+    juce::Rectangle<int> comboRow;
+    const bool hasCombo = (section.comboBox != nullptr);
+    if (hasCombo)
+        comboRow = area.removeFromTop (22);
 
     if (section.toggleButton != nullptr)
         section.toggleButton->setBounds (area.removeFromTop (20).reduced (2, 0));
@@ -55,9 +57,30 @@ void PopVocalAudioProcessorEditor::layoutSection (juce::Rectangle<int> area, Sec
     const int columns = juce::jmax (1, section.knobColumns);
     const int totalKnobs = (int) section.knobs.size();
     if (totalKnobs == 0)
+    {
+        if (hasCombo)
+            section.comboBox->setBounds (comboRow.reduced (2, 0));
         return;
+    }
+
     const int rows = (totalKnobs + columns - 1) / columns;
     const int rowHeight = area.getHeight() / rows;
+    const int firstRowKnobs = juce::jmin (columns, totalKnobs);
+    const int firstRowKnobWidth = area.getWidth() / juce::jmax (1, firstRowKnobs);
+
+    if (hasCombo)
+    {
+        if (section.comboBoxKnobIndex >= 0 && section.comboBoxKnobIndex < firstRowKnobs)
+        {
+            auto cell = comboRow.withX (comboRow.getX() + section.comboBoxKnobIndex * firstRowKnobWidth)
+                                 .withWidth (firstRowKnobWidth);
+            section.comboBox->setBounds (cell.reduced (2, 0));
+        }
+        else
+        {
+            section.comboBox->setBounds (comboRow.reduced (2, 0));
+        }
+    }
 
     for (int r = 0; r < rows; ++r)
     {
@@ -170,7 +193,35 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     compModeBox.addItem ("Naturel (VariMu)",  3);
     addAndMakeVisible (compModeBox);
     compressorSection.comboBox = &compModeBox;
-    compModeBox.onChange = [this] { updateCompressorLabels(); };
+
+    // L'attachment DOIT être créé avant qu'on personnalise onChange : son
+    // constructeur assigne son propre onChange en interne, donc le créer
+    // après (comme précédemment) écrasait silencieusement notre callback —
+    // c'était le vrai bug : ni le relabel ni l'application des valeurs par
+    // défaut ne se déclenchaient jamais.
+    compModeAttachment = std::make_unique<ComboBoxAttachment> (apvts, "compMode", compModeBox);
+    {
+        auto attachmentOnChange = compModeBox.onChange; // celui que l'attachment vient de poser
+
+        const std::vector<std::pair<juce::String, float>> agressif { {"compP1",0.3f}, {"compP2",1.0f}, {"compP3",1.0f} };
+        const std::vector<std::pair<juce::String, float>> doux     { {"compP1",0.3f}, {"compP2",0.5f}, {"compP3",1.0f} };
+        const std::vector<std::pair<juce::String, float>> naturel  { {"compP1",0.3f}, {"compP2",0.5f}, {"compP3",1.0f} };
+
+        compModeBox.onChange = [this, attachmentOnChange, agressif, doux, naturel]
+        {
+            if (attachmentOnChange)
+                attachmentOnChange(); // préserve la synchro du paramètre compMode
+
+            updateCompressorLabels();
+            switch (compModeBox.getSelectedId())
+            {
+                case 1: applyPreset (agressif); break;
+                case 2: applyPreset (doux);     break;
+                case 3: applyPreset (naturel);  break;
+                default: break;
+            }
+        };
+    }
 
     // ================= DE-RES PRECISE =================
     finishSectionSetup (resPreciseSection, "DE-RES (PRECISE)");
@@ -204,13 +255,15 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= EQ =================
     finishSectionSetup (eqSection, "EQ");
-    eqSection.knobColumns = 3; // 6 knobs -> 2 rangees de 3
+    eqSection.knobColumns = 3; // 8 knobs -> 3 rangees (3+3+2)
     attach (addKnob (eqSection, "LOW").slider,       "eqLow");
     attach (addKnob (eqSection, "MID").slider,       "eqMid");
     attach (addKnob (eqSection, "HIGH").slider,      "eqHigh");
     attach (addKnob (eqSection, "LOW FREQ").slider,  "eqLowFreq");
     attach (addKnob (eqSection, "MID FREQ").slider,  "eqMidFreq");
     attach (addKnob (eqSection, "HIGH FREQ").slider, "eqHighFreq");
+    attach (addKnob (eqSection, "LOW CUT").slider,   "eqLowCutFreq");
+    attach (addKnob (eqSection, "HIGH CUT").slider,  "eqHighCutFreq");
 
     addAndMakeVisible (eqCurve);
     eqSection.extraDisplay = &eqCurve;
@@ -223,10 +276,10 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (eqPresetBox);
     eqSection.comboBox = &eqPresetBox;
     {
-        const std::vector<std::pair<juce::String, float>> neutre     { {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f} };
-        const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f} };
-        const std::vector<std::pair<juce::String, float>> brillant   { {"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f} };
-        const std::vector<std::pair<juce::String, float>> presence   { {"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f} };
+        const std::vector<std::pair<juce::String, float>> neutre     { {"eqLowCutFreq",80.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",0.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
+        const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLowCutFreq",80.0f}, {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",16000.0f} };
+        const std::vector<std::pair<juce::String, float>> brillant   { {"eqLowCutFreq",100.0f},{"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
+        const std::vector<std::pair<juce::String, float>> presence   { {"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f}, {"eqHighCutFreq",10000.0f} };
         eqPresetBox.onChange = [this, neutre, chaleureux, brillant, presence]
         {
             switch (eqPresetBox.getSelectedId())
@@ -242,7 +295,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= DELAY =================
     finishSectionSetup (delaySection, "DELAY");
-    attach (addKnob (delaySection, "TIME (FREE)").slider, "delayTime");
+    attach (addKnob (delaySection, "TIME").slider, "delayTime");
     attach (addKnob (delaySection, "FEEDBACK").slider,    "delayFeedback");
     attach (addKnob (delaySection, "MIX").slider,         "delayMix");
 
@@ -252,6 +305,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     delayRateBox.addItem ("1/8", 4);
     addAndMakeVisible (delayRateBox);
     delaySection.comboBox = &delayRateBox;
+    delaySection.comboBoxKnobIndex = 0; // rattaché visuellement au knob TIME (même colonne)
     delayRateAttachment = std::make_unique<ComboBoxAttachment> (apvts, "delayRateMode", delayRateBox);
 
     addAndMakeVisible (delayPingPongToggle);
@@ -288,10 +342,9 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
         };
     }
 
-    compModeAttachment = std::make_unique<ComboBoxAttachment> (apvts, "compMode", compModeBox);
-    updateCompressorLabels();
+    updateCompressorLabels(); // synchronise les libellés avec le mode actuel au chargement
 
-    setSize (1040, 680);
+    setSize (1040, 760);
 }
 
 PopVocalAudioProcessorEditor::~PopVocalAudioProcessorEditor()

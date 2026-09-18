@@ -41,6 +41,8 @@ public:
         std::fill (bufferL.begin(), bufferL.end(), 0.0f);
         std::fill (bufferR.begin(), bufferR.end(), 0.0f);
         writePos = 0;
+        sampleCounterSinceFlip = 0.0;
+        primaryIsLeft = true;
     }
 
     /** delayTimeMs déjà résolu (Free ms, ou calculé depuis le tempo côté processeur). */
@@ -76,10 +78,29 @@ public:
 
             if (pingPong)
             {
-                // Entrée sommée mono -> tap gauche ; feedback croisé L<->R -> rebond
+                // Entrée sommée mono -> tap "primaire" du moment, avec feedback croisé
+                // vers l'autre côté. Le côté primaire alterne toutes les delayTimeSamples
+                // pour que la voix rebondisse vraiment de chaque côté, à niveau équivalent,
+                // plutôt que de toujours privilégier le même canal.
                 const float inputMono = 0.5f * (inL + inR);
-                bufferL[(size_t) writePos] = inputMono + delayedR * feedback;
-                bufferR[(size_t) writePos] = delayedL * feedback;
+
+                if (primaryIsLeft)
+                {
+                    bufferL[(size_t) writePos] = inputMono + delayedR * feedback;
+                    bufferR[(size_t) writePos] = delayedL * feedback;
+                }
+                else
+                {
+                    bufferR[(size_t) writePos] = inputMono + delayedL * feedback;
+                    bufferL[(size_t) writePos] = delayedR * feedback;
+                }
+
+                sampleCounterSinceFlip += 1.0;
+                if (sampleCounterSinceFlip >= delayTimeSamples)
+                {
+                    sampleCounterSinceFlip -= delayTimeSamples;
+                    primaryIsLeft = ! primaryIsLeft;
+                }
             }
             else
             {
@@ -101,6 +122,8 @@ private:
     float feedback = 0.3f;
     float mix = 0.0f;
     bool pingPong = false;
+    double sampleCounterSinceFlip = 0.0;
+    bool primaryIsLeft = true;
 
     std::vector<float> bufferL, bufferR;
     int writePos = 0;

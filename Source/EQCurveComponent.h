@@ -41,22 +41,27 @@ public:
         g.setColour (juce::Colours::white.withAlpha (0.12f));
         g.drawLine (bounds.getX(), zeroY, bounds.getRight(), zeroY, 1.0f);
 
+        auto* lowCutParam   = apvts.getRawParameterValue ("eqLowCutFreq");
         auto* lowParam      = apvts.getRawParameterValue ("eqLow");
         auto* lowFreqParam  = apvts.getRawParameterValue ("eqLowFreq");
         auto* midParam      = apvts.getRawParameterValue ("eqMid");
         auto* midFreqParam  = apvts.getRawParameterValue ("eqMidFreq");
         auto* highParam     = apvts.getRawParameterValue ("eqHigh");
         auto* highFreqParam = apvts.getRawParameterValue ("eqHighFreq");
+        auto* highCutParam  = apvts.getRawParameterValue ("eqHighCutFreq");
         if (lowParam == nullptr || midParam == nullptr || highParam == nullptr
-            || lowFreqParam == nullptr || midFreqParam == nullptr || highFreqParam == nullptr)
+            || lowFreqParam == nullptr || midFreqParam == nullptr || highFreqParam == nullptr
+            || lowCutParam == nullptr || highCutParam == nullptr)
             return;
 
+        const float lowCutFreq  = lowCutParam->load();
         const float lowGain  = lowParam->load();
         const float midGain  = midParam->load();
         const float highGain = highParam->load();
         const float lowFreq  = lowFreqParam->load();
         const float midFreq  = midFreqParam->load();
         const float highFreq = highFreqParam->load();
+        const float highCutFreq = highCutParam->load();
 
         // Sample rate de référence pour le tracé — la réponse d'un shelf/peak
         // en dB ne dépend quasiment pas du sample rate choisi ici tant qu'il
@@ -64,12 +69,14 @@ public:
         // pour un simple affichage.
         const double displaySampleRate = 48000.0;
 
+        auto lowCutCoeffs  = juce::dsp::IIR::Coefficients<float>::makeHighPass (displaySampleRate, lowCutFreq, 0.707f);
         auto lowCoeffs  = juce::dsp::IIR::Coefficients<float>::makeLowShelf (
             displaySampleRate, lowFreq, 0.707f, juce::Decibels::decibelsToGain (lowGain));
         auto midCoeffs  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (
             displaySampleRate, midFreq, 0.9f, juce::Decibels::decibelsToGain (midGain));
         auto highCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             displaySampleRate, highFreq, 0.707f, juce::Decibels::decibelsToGain (highGain));
+        auto highCutCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowPass (displaySampleRate, highCutFreq, 0.707f);
 
         juce::Path curve;
         constexpr int numPoints = 128;
@@ -81,13 +88,17 @@ public:
             const float t = (float) i / (float) (numPoints - 1);
             const float freq = minFreq * std::pow (maxFreq / minFreq, t);
 
+            const double magLowCut  = lowCutCoeffs->getMagnitudeForFrequency  ((double) freq, displaySampleRate);
             const double magLow  = lowCoeffs->getMagnitudeForFrequency  ((double) freq, displaySampleRate);
             const double magMid  = midCoeffs->getMagnitudeForFrequency  ((double) freq, displaySampleRate);
             const double magHigh = highCoeffs->getMagnitudeForFrequency ((double) freq, displaySampleRate);
+            const double magHighCut = highCutCoeffs->getMagnitudeForFrequency ((double) freq, displaySampleRate);
 
-            const double totalDb = juce::Decibels::gainToDecibels (magLow)
+            const double totalDb = 2.0 * juce::Decibels::gainToDecibels (magLowCut)   // 2 étages en cascade
+                                  + juce::Decibels::gainToDecibels (magLow)
                                   + juce::Decibels::gainToDecibels (magMid)
-                                  + juce::Decibels::gainToDecibels (magHigh);
+                                  + juce::Decibels::gainToDecibels (magHigh)
+                                  + 2.0 * juce::Decibels::gainToDecibels (magHighCut); // 2 étages en cascade
 
             const float x = bounds.getX() + t * bounds.getWidth();
             const float normalised = juce::jlimit (-1.0f, 1.0f, (float) totalDb / dbRange);

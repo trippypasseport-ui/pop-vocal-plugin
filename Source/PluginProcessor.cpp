@@ -20,12 +20,14 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     resPreciseDepthParam       = apvts.getRawParameterValue ("resPreciseDepth");
     resPreciseMixParam         = apvts.getRawParameterValue ("resPreciseMix");
 
+    eqLowCutParam   = apvts.getRawParameterValue ("eqLowCutFreq");
     eqLowParam      = apvts.getRawParameterValue ("eqLow");
     eqLowFreqParam  = apvts.getRawParameterValue ("eqLowFreq");
     eqMidParam      = apvts.getRawParameterValue ("eqMid");
     eqMidFreqParam  = apvts.getRawParameterValue ("eqMidFreq");
     eqHighParam     = apvts.getRawParameterValue ("eqHigh");
     eqHighFreqParam = apvts.getRawParameterValue ("eqHighFreq");
+    eqHighCutParam  = apvts.getRawParameterValue ("eqHighCutFreq");
 
     delayTimeParam     = apvts.getRawParameterValue ("delayTime");
     delayRateModeParam = apvts.getRawParameterValue ("delayRateMode");
@@ -76,13 +78,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("resPreciseDepth",       "Precise Depth",       0.0f, 1.0f, 0.3f);
     addFloat ("resPreciseMix",         "Precise Mix",         0.0f, 1.0f, 1.0f);
 
-    // EQ — gain ET fréquence par bande
+    // EQ — coupe-bas, gain ET fréquence par bande, coupe-haut
+    addFreq  ("eqLowCutFreq", "Low Cut", 20.0f, 500.0f, 80.0f);
     addFloat ("eqLow",  "Low Gain",  -12.0f, 12.0f, 0.0f);
     addFreq  ("eqLowFreq",  "Low Freq",  40.0f,  400.0f,  120.0f);
     addFloat ("eqMid",  "Mid Gain",  -12.0f, 12.0f, 0.0f);
     addFreq  ("eqMidFreq",  "Mid Freq",  200.0f, 5000.0f, 1000.0f);
     addFloat ("eqHigh", "High Gain", -12.0f, 12.0f, 0.0f);
     addFreq  ("eqHighFreq", "High Freq", 2000.0f, 16000.0f, 8000.0f);
+    addFreq  ("eqHighCutFreq", "High Cut", 2000.0f, 20000.0f, 18000.0f);
 
     // Delay — sync tempo + ping-pong
     addFloat ("delayTime", "Time (Free)", 0.0f, 1.0f, 0.3f);
@@ -159,9 +163,11 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     resonancePrecise.processStereo (left, right, numSamples);
 
     // 4. EQ
-    eq.setParameters (eqLowParam->load(), eqLowFreqParam->load(),
+    eq.setParameters (eqLowCutParam->load(),
+                       eqLowParam->load(), eqLowFreqParam->load(),
                        eqMidParam->load(), eqMidFreqParam->load(),
-                       eqHighParam->load(), eqHighFreqParam->load());
+                       eqHighParam->load(), eqHighFreqParam->load(),
+                       eqHighCutParam->load());
     eq.processStereo (left, right, numSamples);
 
     // 5. Delay — temps résolu depuis le tempo hôte si un mode synchronisé est choisi

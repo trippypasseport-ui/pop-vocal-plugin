@@ -27,6 +27,7 @@ private:
         juce::Label titleLabel;
         std::vector<std::unique_ptr<Knob>> knobs;
         juce::ComboBox* comboBox = nullptr;         // algo mode / rate mode / preset
+        int comboBoxKnobIndex = -1;                 // -1 = pleine largeur ; sinon rattaché à ce knob précis
         juce::ToggleButton* toggleButton = nullptr; // ping-pong
         juce::Component* extraDisplay = nullptr;    // EQ : courbe
         int extraDisplayHeight = 0;
