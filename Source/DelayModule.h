@@ -12,16 +12,17 @@
     Mode normal : L et R traités indépendamment, même temps de
     delay des deux côtés.
 
-    Mode ping-pong — refonte v2 : le RÉSEAU de feedback interne
-    (génération des répétitions) reste TOUJOURS fixe et stable —
-    aucune discontinuité possible à cet endroit. Ce qui alterne,
-    c'est uniquement le ROUTAGE de sortie (quel canal physique
-    reçoit la répétition "génératrice" la plus forte), et ce
-    routage est CROSSFADÉ en douceur (~25ms) plutôt que basculé
-    d'un coup — c'est ce qui causait le clic à chaque bascule
-    dans la v1. Le côté privilégié alterne toutes les
-    delayTimeSamples, pour une vraie alternance perceptible sans
-    artefact.
+    Mode ping-pong — v3 : le routage alterne par GÉNÉRATION de
+    répétition (répétition n°1 à droite, n°2 à gauche, n°3 à
+    droite...), calculé à partir du nombre total d'échantillons
+    écoulés divisé par le temps de delay — pas d'un compteur
+    remis à zéro à chaque bascule (qui déclenchait la bascule
+    dès l'apparition du premier écho au lieu d'attendre qu'il
+    ait fini de jouer). Le réseau de feedback interne reste
+    toujours fixe/stable ; seul le ROUTAGE de sortie alterne, en
+    fondu doux (dont la durée s'adapte au temps de delay, pour
+    ne pas empiéter sur des répétitions très rapprochées en
+    1/16) plutôt qu'en bascule instantanée.
     ============================================================
 */
 
@@ -34,7 +35,6 @@ public:
         const int maxDelaySamples = (int) (2.5 * sampleRate);
         bufferGen.assign ((size_t) maxDelaySamples, 0.0f);
         bufferFollow.assign ((size_t) maxDelaySamples, 0.0f);
-        crossfadeSamples = std::max (1.0, 0.025 * sampleRate); // ~25ms de rampe
         reset();
     }
 
@@ -43,7 +43,7 @@ public:
         std::fill (bufferGen.begin(), bufferGen.end(), 0.0f);
         std::fill (bufferFollow.begin(), bufferFollow.end(), 0.0f);
         writePos = 0;
-        sampleCounterSinceFlip = 0.0;
+        totalSamplesElapsed = 0.0;
         genOnLeftTarget = 1.0f;
         genOnLeftSmoothed = 1.0f;
     }
@@ -55,6 +55,10 @@ public:
         feedback = std::min (0.9f, std::max (0.0f, feedback01 * 0.9f));
         mix = mix01;
         pingPong = pingPongOn;
+
+        // Fondu adaptatif : jamais plus de 15% du temps de delay, plafonné à 25ms,
+        // pour ne pas empiéter sur des répétitions très rapprochées (1/16 rapide).
+        crossfadeSamples = std::max (1.0, std::min (0.025 * sampleRate, delayTimeSamples * 0.15));
     }
 
     void processStereo (float* left, float* right, int numSamples)
@@ -90,15 +94,14 @@ public:
                 bufferGen[(size_t) writePos]    = inputMono + delayedFollow * feedback;
                 bufferFollow[(size_t) writePos] = delayedGen * feedback;
 
-                // Bascule périodique de la CIBLE de routage (pas du réseau lui-même)
-                sampleCounterSinceFlip += 1.0;
-                if (sampleCounterSinceFlip >= delayTimeSamples)
-                {
-                    sampleCounterSinceFlip -= delayTimeSamples;
-                    genOnLeftTarget = 1.0f - genOnLeftTarget;
-                }
+                // Cible de routage = fonction de la génération de répétition en cours,
+                // pas d'un compteur remis à zéro (qui basculait dès l'apparition du 1er écho)
+                totalSamplesElapsed += 1.0;
+                const double generation = std::floor (totalSamplesElapsed / delayTimeSamples);
+                const bool generationIsEven = (std::fmod (generation, 2.0) < 1.0);
+                genOnLeftTarget = generationIsEven ? 1.0f : 0.0f; // gen impaire (1ere répét.) -> droite
 
-                // Suivi en douceur de la cible (~25ms) -> zéro discontinuité audible
+                // Suivi en douceur de la cible -> zéro discontinuité audible
                 genOnLeftSmoothed += (genOnLeftTarget - genOnLeftSmoothed) * smoothCoeff;
 
                 wetL = genOnLeftSmoothed * delayedGen + (1.0f - genOnLeftSmoothed) * delayedFollow;
@@ -128,7 +131,7 @@ private:
     float mix = 0.0f;
     bool pingPong = false;
 
-    double sampleCounterSinceFlip = 0.0;
+    double totalSamplesElapsed = 0.0;
     float genOnLeftTarget = 1.0f;
     float genOnLeftSmoothed = 1.0f;
 

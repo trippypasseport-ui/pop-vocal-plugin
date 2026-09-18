@@ -41,6 +41,13 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
 
     inputGainParam  = apvts.getRawParameterValue ("inputGain");
     outputGainParam = apvts.getRawParameterValue ("outputGain");
+
+    resBroadActiveParam   = apvts.getRawParameterValue ("resBroadActive");
+    compressorActiveParam = apvts.getRawParameterValue ("compressorActive");
+    resPreciseActiveParam = apvts.getRawParameterValue ("resPreciseActive");
+    eqActiveParam         = apvts.getRawParameterValue ("eqActive");
+    delayActiveParam      = apvts.getRawParameterValue ("delayActive");
+    reverbActiveParam     = apvts.getRawParameterValue ("reverbActive");
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::createParameterLayout()
@@ -94,7 +101,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     // Delay — sync tempo + ping-pong
     addFloat ("delayTime", "Time (Free)", 0.0f, 1.0f, 0.3f);
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        "delayRateMode", "Delay Rate", juce::StringArray { "Free", "1/2", "1/4", "1/8" }, 0));
+        "delayRateMode", "Delay Rate", juce::StringArray { "Free", "1/2", "1/4", "1/8", "1/16" }, 0));
     addFloat ("delayFeedback", "Feedback",  0.0f, 1.0f, 0.3f);
     addFloat ("delayMix",      "Delay Mix", 0.0f, 1.0f, 0.0f);
     params.push_back (std::make_unique<juce::AudioParameterBool> (
@@ -108,6 +115,18 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     // Entrée / Sortie — gain de tranche, mesuré par les mètres de niveau
     addFloat ("inputGain",  "Input Gain",  -24.0f, 24.0f, 0.0f);
     addFloat ("outputGain", "Output Gain", -24.0f, 24.0f, 0.0f);
+
+    // Bypass par section (tous actifs par défaut)
+    auto addBool = [&params] (const juce::String& id, const juce::String& name)
+    {
+        params.push_back (std::make_unique<juce::AudioParameterBool> (id, name, true));
+    };
+    addBool ("resBroadActive",   "De-Res Broad Active");
+    addBool ("compressorActive", "Compressor Active");
+    addBool ("resPreciseActive", "De-Res Precise Active");
+    addBool ("eqActive",         "EQ Active");
+    addBool ("delayActive",      "Delay Active");
+    addBool ("reverbActive",     "Reverb Active");
 
     return { params.begin(), params.end() };
 }
@@ -171,58 +190,84 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
 
     // 1. De-Resonance large
-    resonanceBroad.setParameters (resBroadSensitivityParam->load(), resBroadDepthParam->load(), resBroadMixParam->load());
-    resonanceBroad.processStereo (left, right, numSamples);
+    if (resBroadActiveParam->load() > 0.5f)
+    {
+        resonanceBroad.setParameters (resBroadSensitivityParam->load(), resBroadDepthParam->load(), resBroadMixParam->load());
+        resonanceBroad.processStereo (left, right, numSamples);
+    }
 
     // 2. Compresseur — algorithme sélectionné
-    const int modeIndex = juce::jlimit (0, (int) compressorAlgorithms.size() - 1, (int) compModeParam->load());
-    auto* activeCompressor = compressorAlgorithms[(size_t) modeIndex];
-    activeCompressor->setParameters (compP1Param->load(), compP2Param->load(), compP3Param->load());
-    activeCompressor->processStereo (left, right, numSamples);
+    if (compressorActiveParam->load() > 0.5f)
+    {
+        const int modeIndex = juce::jlimit (0, (int) compressorAlgorithms.size() - 1, (int) compModeParam->load());
+        auto* activeCompressor = compressorAlgorithms[(size_t) modeIndex];
+        activeCompressor->setParameters (compP1Param->load(), compP2Param->load(), compP3Param->load());
+        activeCompressor->processStereo (left, right, numSamples);
+    }
 
     // 3. De-Resonance précise
-    resonancePrecise.setParameters (resPreciseSensitivityParam->load(), resPreciseDepthParam->load(), resPreciseMixParam->load());
-    resonancePrecise.processStereo (left, right, numSamples);
+    if (resPreciseActiveParam->load() > 0.5f)
+    {
+        resonancePrecise.setParameters (resPreciseSensitivityParam->load(), resPreciseDepthParam->load(), resPreciseMixParam->load());
+        resonancePrecise.processStereo (left, right, numSamples);
+    }
 
     // 4. EQ
-    eq.setParameters (eqLowCutParam->load(),
-                       eqLowParam->load(), eqLowFreqParam->load(),
-                       eqMidParam->load(), eqMidFreqParam->load(),
-                       eqHighParam->load(), eqHighFreqParam->load(),
-                       eqHighCutParam->load());
-    eq.processStereo (left, right, numSamples);
+    if (eqActiveParam->load() > 0.5f)
+    {
+        eq.setParameters (eqLowCutParam->load(),
+                           eqLowParam->load(), eqLowFreqParam->load(),
+                           eqMidParam->load(), eqMidFreqParam->load(),
+                           eqHighParam->load(), eqHighFreqParam->load(),
+                           eqHighCutParam->load());
+        eq.processStereo (left, right, numSamples);
+    }
 
     // 5. Delay — temps résolu depuis le tempo hôte si un mode synchronisé est choisi
-    double bpm = 120.0;
-    if (auto* playHead = getPlayHead())
+    if (delayActiveParam->load() > 0.5f)
     {
-        if (auto position = playHead->getPosition())
+        double bpm = 120.0;
+        if (auto* playHead = getPlayHead())
         {
-            if (auto tempo = position->getBpm())
-                bpm = *tempo;
+            if (auto position = playHead->getPosition())
+            {
+                if (auto tempo = position->getBpm())
+                    bpm = *tempo;
+            }
         }
-    }
 
-    const int rateMode = (int) delayRateModeParam->load(); // 0=Free,1=1/2,2=1/4,3=1/8
-    double delayMs;
-    if (rateMode == 0)
-    {
-        delayMs = 20.0 + (double) delayTimeParam->load() * 980.0;
-    }
-    else
-    {
-        const double quarterNoteMs = 60000.0 / bpm;
-        const double multiplier = (rateMode == 1) ? 2.0 : (rateMode == 2) ? 1.0 : 0.5; // 1/2, 1/4, 1/8
-        delayMs = quarterNoteMs * multiplier;
-    }
+        const int rateMode = (int) delayRateModeParam->load(); // 0=Free,1=1/2,2=1/4,3=1/8,4=1/16
+        double delayMs;
+        if (rateMode == 0)
+        {
+            delayMs = 20.0 + (double) delayTimeParam->load() * 980.0;
+        }
+        else
+        {
+            const double quarterNoteMs = 60000.0 / bpm;
+            double multiplier;
+            switch (rateMode)
+            {
+                case 1: multiplier = 2.0;  break; // 1/2
+                case 2: multiplier = 1.0;  break; // 1/4
+                case 3: multiplier = 0.5;  break; // 1/8
+                case 4: multiplier = 0.25; break; // 1/16
+                default: multiplier = 1.0; break;
+            }
+            delayMs = quarterNoteMs * multiplier;
+        }
 
-    const bool pingPong = delayPingPongParam->load() > 0.5f;
-    delay.setParameters (delayMs, delayFeedbackParam->load(), delayMixParam->load(), pingPong);
-    delay.processStereo (left, right, numSamples);
+        const bool pingPong = delayPingPongParam->load() > 0.5f;
+        delay.setParameters (delayMs, delayFeedbackParam->load(), delayMixParam->load(), pingPong);
+        delay.processStereo (left, right, numSamples);
+    }
 
     // 6. Reverb
-    reverb.setParameters (reverbMixParam->load(), reverbSizeParam->load(), reverbDampingParam->load());
-    reverb.processStereo (left, right, numSamples);
+    if (reverbActiveParam->load() > 0.5f)
+    {
+        reverb.setParameters (reverbMixParam->load(), reverbSizeParam->load(), reverbDampingParam->load());
+        reverb.processStereo (left, right, numSamples);
+    }
 
     // 7. Gain de sortie + mètre (après tout traitement)
     buffer.applyGain (juce::Decibels::decibelsToGain (outputGainParam->load()));

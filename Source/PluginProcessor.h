@@ -88,7 +88,7 @@ private:
     std::atomic<float>* eqHighCutParam  = nullptr;
 
     std::atomic<float>* delayTimeParam     = nullptr; // utilisé seulement en mode "Free"
-    std::atomic<float>* delayRateModeParam = nullptr; // 0=Free,1=1/2,2=1/4,3=1/8
+    std::atomic<float>* delayRateModeParam = nullptr; // 0=Free,1=1/2,2=1/4,3=1/8,4=1/16
     std::atomic<float>* delayFeedbackParam = nullptr;
     std::atomic<float>* delayMixParam      = nullptr;
     std::atomic<float>* delayPingPongParam = nullptr;
@@ -102,6 +102,14 @@ private:
     std::atomic<float> inputLevelDb  { -60.0f };
     std::atomic<float> outputLevelDb { -60.0f };
     double currentSampleRate = 44100.0;
+
+    // Bypass par section — "actif" = traite le signal, sinon le laisse passer inchangé
+    std::atomic<float>* resBroadActiveParam   = nullptr;
+    std::atomic<float>* compressorActiveParam = nullptr;
+    std::atomic<float>* resPreciseActiveParam = nullptr;
+    std::atomic<float>* eqActiveParam         = nullptr;
+    std::atomic<float>* delayActiveParam      = nullptr;
+    std::atomic<float>* reverbActiveParam     = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PopVocalAudioProcessor)
 };

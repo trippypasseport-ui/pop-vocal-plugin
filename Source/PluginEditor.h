@@ -29,7 +29,8 @@ private:
         std::vector<std::unique_ptr<Knob>> knobs;
         juce::ComboBox* comboBox = nullptr;         // algo mode / rate mode / preset
         int comboBoxKnobIndex = -1;                 // -1 = pleine largeur ; sinon rattaché à ce knob précis
-        juce::ToggleButton* toggleButton = nullptr; // ping-pong
+        juce::ToggleButton* toggleButton = nullptr; // ping-pong (Delay uniquement)
+        juce::ToggleButton* activeToggle = nullptr; // bypass actif/inactif, sur toutes les sections
         juce::Component* extraDisplay = nullptr;    // EQ : courbe
         int extraDisplayHeight = 0;
         int knobColumns = 3;                        // EQ : 3 colonnes x 2 rangées (6 knobs)
@@ -55,6 +56,10 @@ private:
     juce::ComboBox delayRateBox;
     juce::ToggleButton delayPingPongToggle { "Ping-Pong" };
 
+    // Bypass actif/inactif par section
+    juce::ToggleButton resBroadActiveToggle { "" }, compressorActiveToggle { "" }, resPreciseActiveToggle { "" };
+    juce::ToggleButton eqActiveToggle { "" }, delayActiveToggle { "" }, reverbActiveToggle { "" };
+
     EQCurveComponent eqCurve;
 
     // Entrée / Sortie — mètres + gain de tranche, en bordure gauche/droite
@@ -70,6 +75,8 @@ private:
     std::unique_ptr<ComboBoxAttachment> compModeAttachment;
     std::unique_ptr<ComboBoxAttachment> delayRateAttachment;
     std::unique_ptr<ButtonAttachment> delayPingPongAttachment;
+    std::unique_ptr<ButtonAttachment> resBroadActiveAttachment, compressorActiveAttachment, resPreciseActiveAttachment;
+    std::unique_ptr<ButtonAttachment> eqActiveAttachment, delayActiveAttachment, reverbActiveAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PopVocalAudioProcessorEditor)
 };

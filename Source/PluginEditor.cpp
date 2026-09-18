@@ -41,7 +41,11 @@ void PopVocalAudioProcessorEditor::finishSectionSetup (Section& section, const j
 void PopVocalAudioProcessorEditor::layoutSection (juce::Rectangle<int> area, Section& section)
 {
     area.reduce (10, 6);
-    section.titleLabel.setBounds (area.removeFromTop (18));
+
+    auto titleRow = area.removeFromTop (18);
+    if (section.activeToggle != nullptr)
+        section.activeToggle->setBounds (titleRow.removeFromRight (46));
+    section.titleLabel.setBounds (titleRow);
 
     juce::Rectangle<int> comboRow;
     const bool hasCombo = (section.comboBox != nullptr);
@@ -155,6 +159,9 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= DE-RES BROAD =================
     finishSectionSetup (resBroadSection, "DE-RES (BROAD)");
+    addAndMakeVisible (resBroadActiveToggle);
+    resBroadSection.activeToggle = &resBroadActiveToggle;
+    resBroadActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "resBroadActive", resBroadActiveToggle);
     attach (addKnob (resBroadSection, "SENSITIVITY").slider, "resBroadSensitivity");
     attach (addKnob (resBroadSection, "DEPTH").slider,       "resBroadDepth");
     attach (addKnob (resBroadSection, "MIX").slider,         "resBroadMix");
@@ -185,6 +192,9 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= COMPRESSOR =================
     finishSectionSetup (compressorSection, "COMPRESSOR");
+    addAndMakeVisible (compressorActiveToggle);
+    compressorSection.activeToggle = &compressorActiveToggle;
+    compressorActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "compressorActive", compressorActiveToggle);
     attach (addKnob (compressorSection, "INTENSITY").slider, "compP1");
     attach (addKnob (compressorSection, "OUTPUT").slider,    "compP2");
     attach (addKnob (compressorSection, "MIX").slider,       "compP3");
@@ -226,6 +236,9 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= DE-RES PRECISE =================
     finishSectionSetup (resPreciseSection, "DE-RES (PRECISE)");
+    addAndMakeVisible (resPreciseActiveToggle);
+    resPreciseSection.activeToggle = &resPreciseActiveToggle;
+    resPreciseActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "resPreciseActive", resPreciseActiveToggle);
     attach (addKnob (resPreciseSection, "SENSITIVITY").slider, "resPreciseSensitivity");
     attach (addKnob (resPreciseSection, "DEPTH").slider,       "resPreciseDepth");
     attach (addKnob (resPreciseSection, "MIX").slider,         "resPreciseMix");
@@ -256,6 +269,9 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= EQ =================
     finishSectionSetup (eqSection, "EQ");
+    addAndMakeVisible (eqActiveToggle);
+    eqSection.activeToggle = &eqActiveToggle;
+    eqActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "eqActive", eqActiveToggle);
     eqSection.knobColumns = 3; // 8 knobs -> 3 rangees (3+3+2)
     attach (addKnob (eqSection, "LOW").slider,       "eqLow");
     attach (addKnob (eqSection, "MID").slider,       "eqMid");
@@ -274,6 +290,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     eqPresetBox.addItem ("Chaleureux", 2);
     eqPresetBox.addItem ("Brillant", 3);
     eqPresetBox.addItem ("Presence Radio", 4);
+    eqPresetBox.addItem ("Air", 5);
     addAndMakeVisible (eqPresetBox);
     eqSection.comboBox = &eqPresetBox;
     {
@@ -281,7 +298,10 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
         const std::vector<std::pair<juce::String, float>> chaleureux { {"eqLowCutFreq",80.0f}, {"eqLow",3.0f},{"eqLowFreq",120.0f},{"eqMid",-1.0f},{"eqMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",16000.0f} };
         const std::vector<std::pair<juce::String, float>> brillant   { {"eqLowCutFreq",100.0f},{"eqLow",-1.0f},{"eqLowFreq",120.0f},{"eqMid",0.0f},{"eqMidFreq",1000.0f},{"eqHigh",3.0f},{"eqHighFreq",8000.0f}, {"eqHighCutFreq",18000.0f} };
         const std::vector<std::pair<juce::String, float>> presence   { {"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},{"eqMid",3.0f},{"eqMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f}, {"eqHighCutFreq",10000.0f} };
-        eqPresetBox.onChange = [this, neutre, chaleureux, brillant, presence]
+        // Air : léger creux dans le bas-médium pour désencombrer, shelf haut très étiré
+        // et généreux (~13kHz) pour donner de l'ouverture sans devenir sifflant
+        const std::vector<std::pair<juce::String, float>> air        { {"eqLowCutFreq",90.0f}, {"eqLow",0.0f},{"eqLowFreq",120.0f},{"eqMid",-1.5f},{"eqMidFreq",400.0f},{"eqHigh",4.5f},{"eqHighFreq",13000.0f}, {"eqHighCutFreq",19000.0f} };
+        eqPresetBox.onChange = [this, neutre, chaleureux, brillant, presence, air]
         {
             switch (eqPresetBox.getSelectedId())
             {
@@ -289,6 +309,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
                 case 2: applyPreset (chaleureux); break;
                 case 3: applyPreset (brillant);   break;
                 case 4: applyPreset (presence);   break;
+                case 5: applyPreset (air);        break;
                 default: break;
             }
         };
@@ -296,6 +317,9 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= DELAY =================
     finishSectionSetup (delaySection, "DELAY");
+    addAndMakeVisible (delayActiveToggle);
+    delaySection.activeToggle = &delayActiveToggle;
+    delayActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "delayActive", delayActiveToggle);
     attach (addKnob (delaySection, "TIME").slider, "delayTime");
     attach (addKnob (delaySection, "FEEDBACK").slider,    "delayFeedback");
     attach (addKnob (delaySection, "MIX").slider,         "delayMix");
@@ -304,6 +328,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     delayRateBox.addItem ("1/2", 2);
     delayRateBox.addItem ("1/4", 3);
     delayRateBox.addItem ("1/8", 4);
+    delayRateBox.addItem ("1/16", 5);
     addAndMakeVisible (delayRateBox);
     delaySection.comboBox = &delayRateBox;
     delaySection.comboBoxKnobIndex = 0; // rattaché visuellement au knob TIME (même colonne)
@@ -315,6 +340,9 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= REVERB =================
     finishSectionSetup (reverbSection, "REVERB");
+    addAndMakeVisible (reverbActiveToggle);
+    reverbSection.activeToggle = &reverbActiveToggle;
+    reverbActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "reverbActive", reverbActiveToggle);
     attach (addKnob (reverbSection, "MIX").slider,     "reverbMix");
     attach (addKnob (reverbSection, "SIZE").slider,    "reverbSize");
     attach (addKnob (reverbSection, "DAMPING").slider, "reverbDamping");
