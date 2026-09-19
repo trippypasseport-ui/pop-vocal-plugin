@@ -416,18 +416,18 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (eqActiveToggle);
     eqSection.activeToggle = &eqActiveToggle;
     eqActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "eqActive", eqActiveToggle);
-    eqSection.knobColumns = 4; // 11 knobs -> 3 rangees (4+4+3)
-    attach (addKnob (eqSection, "LOW CUT").slider,     "eqLowCutFreq");
-    attach (addKnob (eqSection, "LOW").slider,         "eqLow");
-    attach (addKnob (eqSection, "LOW FREQ").slider,    "eqLowFreq");
-    attach (addKnob (eqSection, "LOW-MID").slider,     "eqLowMid");
-    attach (addKnob (eqSection, "LOW-MID FREQ").slider,"eqLowMidFreq");
+    eqSection.knobColumns = 4; // 11 knobs -> 3 rangees (gains / frequences / low-high cut+air)
+    attach (addKnob (eqSection, "LOW").slider,          "eqLow");
+    attach (addKnob (eqSection, "LOW-MID").slider,      "eqLowMid");
     attach (addKnob (eqSection, "HIGH-MID").slider,     "eqHighMid");
+    attach (addKnob (eqSection, "HIGH").slider,         "eqHigh");
+    attach (addKnob (eqSection, "LOW FREQ").slider,     "eqLowFreq");
+    attach (addKnob (eqSection, "LOW-MID FREQ").slider, "eqLowMidFreq");
     attach (addKnob (eqSection, "HIGH-MID FREQ").slider,"eqHighMidFreq");
-    attach (addKnob (eqSection, "HIGH").slider,        "eqHigh");
-    attach (addKnob (eqSection, "HIGH FREQ").slider,   "eqHighFreq");
-    attach (addKnob (eqSection, "HIGH CUT").slider,    "eqHighCutFreq");
-    attach (addKnob (eqSection, "AIR").slider,         "eqAirAmount");
+    attach (addKnob (eqSection, "HIGH FREQ").slider,    "eqHighFreq");
+    attach (addKnob (eqSection, "LOW CUT").slider,      "eqLowCutFreq");
+    attach (addKnob (eqSection, "HIGH CUT").slider,     "eqHighCutFreq");
+    attach (addKnob (eqSection, "AIR").slider,          "eqAirAmount");
 
     addAndMakeVisible (eqCurve);
 
