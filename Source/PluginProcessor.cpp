@@ -182,7 +182,7 @@ void PopVocalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 {
     currentSampleRate = sampleRate;
 
-    resonanceBroad.prepare (sampleRate, samplesPerBlock);
+    autoBalancer.prepare (sampleRate, samplesPerBlock);
     resonancePrecise.prepare (sampleRate, samplesPerBlock);
 
     for (auto* algo : compressorAlgorithms)
@@ -197,7 +197,7 @@ void PopVocalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 
 void PopVocalAudioProcessor::releaseResources()
 {
-    resonanceBroad.reset();
+    autoBalancer.reset();
     resonancePrecise.reset();
 
     for (auto* algo : compressorAlgorithms)
@@ -240,11 +240,12 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         inputLevelDb.store (peakDb > current ? peakDb : current - decay);
     }
 
-    // 1. De-Resonance large
+    // 1. Balance automatique (low/mid/high) — équilibre l'énergie relative des
+    // 3 zones plutôt que de traquer des pics ponctuels (voir De-Res plus bas)
     if (resBroadActiveParam->load() > 0.5f)
     {
-        resonanceBroad.setParameters (resBroadSensitivityParam->load(), resBroadDepthParam->load(), resBroadMixParam->load());
-        resonanceBroad.processStereo (left, right, numSamples);
+        autoBalancer.setParameters (resBroadSensitivityParam->load(), resBroadDepthParam->load(), resBroadMixParam->load());
+        autoBalancer.processStereo (left, right, numSamples);
     }
 
     // 2. Compresseur — algorithme sélectionné
@@ -285,14 +286,7 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
 
-    // 3. De-Resonance précise
-    if (resPreciseActiveParam->load() > 0.5f)
-    {
-        resonancePrecise.setParameters (resPreciseSensitivityParam->load(), resPreciseDepthParam->load(), resPreciseMixParam->load());
-        resonancePrecise.processStereo (left, right, numSamples);
-    }
-
-    // 4. EQ — mode Normal ou Pultec, selon eqMode
+    // 3. EQ — mode Normal ou Pultec, selon eqMode
     if (eqActiveParam->load() > 0.5f)
     {
         const bool pultecMode = (int) eqModeParam->load() >= 1;
@@ -316,6 +310,15 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
                                eqAirAmountParam->load());
             eq.processStereo (left, right, numSamples);
         }
+    }
+
+    // 4. De-Resonance précise — placée APRÈS l'EQ pour corriger ce que la
+    // coloration de l'EQ (Air, Presence, boosts...) a pu faire ressortir,
+    // pas seulement ce qui existait déjà dans la voix brute
+    if (resPreciseActiveParam->load() > 0.5f)
+    {
+        resonancePrecise.setParameters (resPreciseSensitivityParam->load(), resPreciseDepthParam->load(), resPreciseMixParam->load());
+        resonancePrecise.processStereo (left, right, numSamples);
     }
 
     // 5. Delay — temps résolu depuis le tempo hôte si un mode synchronisé est choisi

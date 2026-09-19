@@ -5,6 +5,7 @@
 #include "ButterCompCompressor.h"
 #include "VariMuCompressor.h"
 #include "ResonanceSuppressor.h"
+#include "AutoBalancer.h"
 #include "ParametricEQ.h"
 #include "PultecEQ.h"
 #include "DelayModule.h"
@@ -54,9 +55,10 @@ public:
 
 private:
     // Chaîne, dans l'ordre :
-    // de-res large -> compresseur (sélectionnable) -> de-res précise ->
-    // EQ -> delay (sync tempo + ping-pong) -> reverb
-    ResonanceSuppressor resonanceBroad   { 1.8f };
+    // balance auto (low/mid/high) -> compresseur (sélectionnable) ->
+    // EQ -> de-res précise (nettoie ce que l'EQ a pu faire ressortir) ->
+    // delay (sync tempo + ping-pong + duck) -> reverb (duck)
+    AutoBalancer autoBalancer;               // ex "de-res large" -> vrai balanceur multibande maintenant
     ResonanceSuppressor resonancePrecise { 6.0f };
 
     PopCompressor        compAgressif;

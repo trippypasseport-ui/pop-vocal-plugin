@@ -279,7 +279,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     titleLabel.setJustificationType (juce::Justification::centredLeft);
     addAndMakeVisible (titleLabel);
 
-    subtitleLabel.setText ("RES.BROAD -> COMP -> RES.PRECISE -> EQ -> DELAY -> REVERB", juce::dontSendNotification);
+    subtitleLabel.setText ("BALANCE -> COMP -> EQ -> DE-RES -> DELAY -> REVERB", juce::dontSendNotification);
     subtitleLabel.setFont (juce::Font (9.5f, juce::Font::plain));
     subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
     subtitleLabel.setJustificationType (juce::Justification::centredLeft);
@@ -302,7 +302,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     };
 
     // ================= DE-RES BROAD =================
-    finishSectionSetup (resBroadSection, "DE-RES (BROAD)");
+    finishSectionSetup (resBroadSection, "BALANCE (AUTO)");
     addAndMakeVisible (resBroadActiveToggle);
     resBroadSection.activeToggle = &resBroadActiveToggle;
     resBroadActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "resBroadActive", resBroadActiveToggle);
@@ -381,7 +381,7 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     }
 
     // ================= DE-RES PRECISE =================
-    finishSectionSetup (resPreciseSection, "DE-RES (PRECISE)");
+    finishSectionSetup (resPreciseSection, "DE-RES (POST-EQ)");
     addAndMakeVisible (resPreciseActiveToggle);
     resPreciseSection.activeToggle = &resPreciseActiveToggle;
     resPreciseActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "resPreciseActive", resPreciseActiveToggle);
@@ -707,11 +707,10 @@ void PopVocalAudioProcessorEditor::resized()
     x += colWidth + 16;
     layoutSection ({ x, content.getY(), colWidth, rowHeight }, compressorSection);
     x += colWidth + 16;
-    layoutSection ({ x, content.getY(), colWidth, rowHeight }, resPreciseSection);
 
-    // ============ EQ : case normale de la grille (comme les 5 autres) ============
+    // ============ EQ : case normale de la grille (rangee 1, colonne 3) ============
     {
-        juce::Rectangle<int> area { content.getX(), content.getY() + rowHeight + 16, colWidth, rowHeight };
+        juce::Rectangle<int> area { x, content.getY(), colWidth, rowHeight };
         area.reduce (10, 6);
 
         auto titleRow = area.removeFromTop (18);
@@ -748,9 +747,9 @@ void PopVocalAudioProcessorEditor::resized()
         auto pultecArea = area;
         const int pultecCols = 4;
         const int pultecRowH = pultecArea.getHeight() / 2;
-        auto row1 = pultecArea.removeFromTop (pultecRowH);
-        auto row2 = pultecArea;
-        const int pw = row1.getWidth() / pultecCols;
+        auto pRow1 = pultecArea.removeFromTop (pultecRowH);
+        auto pRow2 = pultecArea;
+        const int pw = pRow1.getWidth() / pultecCols;
 
         auto placeCombo = [&] (juce::Rectangle<int> row, int col, juce::ComboBox& box, juce::Label& label)
         {
@@ -765,18 +764,21 @@ void PopVocalAudioProcessorEditor::resized()
             knob.slider.setBounds (cell.reduced (2, 1));
         };
 
-        placeCombo (row1, 0, pultecLowFreqBox, pultecLowFreqLabel);
-        placeKnob  (row1, 1, pultecLowBoostKnob);
-        placeKnob  (row1, 2, pultecLowAttenKnob);
-        placeCombo (row1, 3, pultecHighBoostFreqBox, pultecHighBoostFreqLabel);
+        placeCombo (pRow1, 0, pultecLowFreqBox, pultecLowFreqLabel);
+        placeKnob  (pRow1, 1, pultecLowBoostKnob);
+        placeKnob  (pRow1, 2, pultecLowAttenKnob);
+        placeCombo (pRow1, 3, pultecHighBoostFreqBox, pultecHighBoostFreqLabel);
 
-        placeKnob  (row2, 0, pultecHighBoostKnob);
-        placeKnob  (row2, 1, pultecHighBandwidthKnob);
-        placeCombo (row2, 2, pultecHighAttenFreqBox, pultecHighAttenFreqLabel);
-        placeKnob  (row2, 3, pultecHighAttenKnob);
+        placeKnob  (pRow2, 0, pultecHighBoostKnob);
+        placeKnob  (pRow2, 1, pultecHighBandwidthKnob);
+        placeCombo (pRow2, 2, pultecHighAttenFreqBox, pultecHighAttenFreqLabel);
+        placeKnob  (pRow2, 3, pultecHighAttenKnob);
     }
 
-    x = content.getX() + colWidth + 16;
+    // ============ Rangee 2 : De-Res (post-EQ), Delay, Reverb ============
+    x = content.getX();
+    layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, resPreciseSection);
+    x += colWidth + 16;
     layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, delaySection);
     x += colWidth + 16;
     layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, reverbSection);
