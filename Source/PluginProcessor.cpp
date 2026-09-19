@@ -1,5 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <cmath>
+#include <algorithm>
 
 PopVocalAudioProcessor::PopVocalAudioProcessor()
     : AudioProcessor (BusesProperties()
@@ -15,6 +17,7 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     compP1Param   = apvts.getRawParameterValue ("compP1");
     compP2Param   = apvts.getRawParameterValue ("compP2");
     compP3Param   = apvts.getRawParameterValue ("compP3");
+    compGainReductionLimitParam = apvts.getRawParameterValue ("compGainReductionLimit");
 
     resPreciseSensitivityParam = apvts.getRawParameterValue ("resPreciseSensitivity");
     resPreciseDepthParam       = apvts.getRawParameterValue ("resPreciseDepth");
@@ -47,10 +50,12 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     delayFeedbackParam = apvts.getRawParameterValue ("delayFeedback");
     delayMixParam      = apvts.getRawParameterValue ("delayMix");
     delayPingPongParam = apvts.getRawParameterValue ("delayPingPong");
+    delayDuckAmountParam = apvts.getRawParameterValue ("delayDuckAmount");
 
     reverbMixParam     = apvts.getRawParameterValue ("reverbMix");
     reverbSizeParam    = apvts.getRawParameterValue ("reverbSize");
     reverbDampingParam = apvts.getRawParameterValue ("reverbDamping");
+    reverbDuckAmountParam = apvts.getRawParameterValue ("reverbDuckAmount");
 
     inputGainParam  = apvts.getRawParameterValue ("inputGain");
     outputGainParam = apvts.getRawParameterValue ("outputGain");
@@ -96,6 +101,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("compP1", "Comp Param 1", 0.0f, 1.0f, 0.3f);
     addFloat ("compP2", "Comp Param 2", 0.0f, 1.0f, 0.5f);
     addFloat ("compP3", "Comp Param 3", 0.0f, 1.0f, 1.0f);
+    // Gain Reduction Limit — plafond de réduction max, indépendant de l'algorithme.
+    // 24dB = pas de plafond en pratique (les 3 algos ne descendent quasiment jamais
+    // en dessous) ; on baisse la valeur pour vraiment brider la compression.
+    addFloat ("compGainReductionLimit", "GR Limit", 3.0f, 24.0f, 24.0f);
 
     // De-Resonance précise (2e passage, après le compresseur)
     addFloat ("resPreciseSensitivity", "Precise Sensitivity", 0.0f, 1.0f, 0.5f);
@@ -141,11 +150,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("delayMix",      "Delay Mix", 0.0f, 1.0f, 0.0f);
     params.push_back (std::make_unique<juce::AudioParameterBool> (
         "delayPingPong", "Ping-Pong", false));
+    addFloat ("delayDuckAmount", "Delay Duck", 0.0f, 1.0f, 0.5f);
 
     // Reverb
     addFloat ("reverbMix",     "Reverb Mix", 0.0f, 1.0f, 0.0f);
     addFloat ("reverbSize",    "Size",       0.0f, 1.0f, 0.5f);
     addFloat ("reverbDamping", "Damping",    0.0f, 1.0f, 0.5f);
+    addFloat ("reverbDuckAmount", "Reverb Duck", 0.0f, 1.0f, 0.5f);
 
     // Entrée / Sortie — gain de tranche, mesuré par les mètres de niveau
     addFloat ("inputGain",  "Input Gain",  -24.0f, 24.0f, 0.0f);
@@ -239,10 +250,39 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // 2. Compresseur — algorithme sélectionné
     if (compressorActiveParam->load() > 0.5f)
     {
+        // Snapshot du sec, pour mesurer la vraie réduction de gain après coup
+        // (Gain Reduction Limit — algorithme-agnostique, marche pareil sur les 3 modes)
+        if ((int) dryLeftScratch.size() < numSamples)
+        {
+            dryLeftScratch.resize ((size_t) numSamples);
+            dryRightScratch.resize ((size_t) numSamples);
+        }
+        std::copy (left, left + numSamples, dryLeftScratch.begin());
+        std::copy (right, right + numSamples, dryRightScratch.begin());
+
         const int modeIndex = juce::jlimit (0, (int) compressorAlgorithms.size() - 1, (int) compModeParam->load());
         auto* activeCompressor = compressorAlgorithms[(size_t) modeIndex];
         activeCompressor->setParameters (compP1Param->load(), compP2Param->load(), compP3Param->load());
         activeCompressor->processStereo (left, right, numSamples);
+
+        const float maxReductionDb = compGainReductionLimitParam->load();
+        if (maxReductionDb < 23.9f) // ~24dB = plafond desactive en pratique
+        {
+            const float minGainLinear = juce::Decibels::decibelsToGain (-maxReductionDb);
+            for (int i = 0; i < numSamples; ++i)
+            {
+                auto limitOne = [minGainLinear] (float& out, float dry)
+                {
+                    const float dryAbs = std::fabs (dry);
+                    if (dryAbs < 1.0e-8f) return;
+                    const float outAbs = std::fabs (out);
+                    if (outAbs < dryAbs * minGainLinear)
+                        out = (out >= 0.0f ? 1.0f : -1.0f) * dryAbs * minGainLinear;
+                };
+                limitOne (left[i],  dryLeftScratch[(size_t) i]);
+                limitOne (right[i], dryRightScratch[(size_t) i]);
+            }
+        }
     }
 
     // 3. De-Resonance précise
@@ -279,6 +319,21 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
 
     // 5. Delay — temps résolu depuis le tempo hôte si un mode synchronisé est choisi
+    // Enveloppe de ducking (mesurée une fois, réutilisée pour Delay ET Reverb) —
+    // suit le signal juste avant ces deux étages, réduit leur wet quand la voix
+    // est présente, laisse remonter dans les silences.
+    {
+        const float attackCoeff  = 1.0f - std::exp (-1.0f / (0.005f * (float) currentSampleRate));  // ~5ms
+        const float releaseCoeff = 1.0f - std::exp (-1.0f / (0.250f * (float) currentSampleRate));   // ~250ms
+        for (int i = 0; i < numSamples; ++i)
+        {
+            const float peak = std::max (std::fabs (left[i]), std::fabs (right[i]));
+            const float coeff = peak > duckEnvelope ? attackCoeff : releaseCoeff;
+            duckEnvelope += (peak - duckEnvelope) * coeff;
+        }
+    }
+    const float duckAmount = juce::jlimit (0.0f, 1.0f, duckEnvelope * 3.0f); // sensibilite
+
     if (delayActiveParam->load() > 0.5f)
     {
         double bpm = 120.0;
@@ -313,14 +368,16 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
 
         const bool pingPong = delayPingPongParam->load() > 0.5f;
-        delay.setParameters (delayMs, delayFeedbackParam->load(), delayMixParam->load(), pingPong);
+        const float duckedDelayMix = delayMixParam->load() * (1.0f - duckAmount * delayDuckAmountParam->load());
+        delay.setParameters (delayMs, delayFeedbackParam->load(), duckedDelayMix, pingPong);
         delay.processStereo (left, right, numSamples);
     }
 
     // 6. Reverb
     if (reverbActiveParam->load() > 0.5f)
     {
-        reverb.setParameters (reverbMixParam->load(), reverbSizeParam->load(), reverbDampingParam->load());
+        const float duckedReverbMix = reverbMixParam->load() * (1.0f - duckAmount * reverbDuckAmountParam->load());
+        reverb.setParameters (duckedReverbMix, reverbSizeParam->load(), reverbDampingParam->load());
         reverb.processStereo (left, right, numSamples);
     }
 

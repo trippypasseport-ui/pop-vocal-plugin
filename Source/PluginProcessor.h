@@ -11,6 +11,7 @@
 #include "ReverbModule.h"
 #include "OutputLimiter.h"
 #include <array>
+#include <vector>
 
 class PopVocalAudioProcessor : public juce::AudioProcessor
 {
@@ -77,6 +78,7 @@ private:
     std::atomic<float>* compP1Param   = nullptr;
     std::atomic<float>* compP2Param   = nullptr;
     std::atomic<float>* compP3Param   = nullptr;
+    std::atomic<float>* compGainReductionLimitParam = nullptr;
 
     std::atomic<float>* resPreciseSensitivityParam = nullptr;
     std::atomic<float>* resPreciseDepthParam       = nullptr;
@@ -109,10 +111,12 @@ private:
     std::atomic<float>* delayFeedbackParam = nullptr;
     std::atomic<float>* delayMixParam      = nullptr;
     std::atomic<float>* delayPingPongParam = nullptr;
+    std::atomic<float>* delayDuckAmountParam = nullptr;
 
     std::atomic<float>* reverbMixParam     = nullptr;
     std::atomic<float>* reverbSizeParam    = nullptr;
     std::atomic<float>* reverbDampingParam = nullptr;
+    std::atomic<float>* reverbDuckAmountParam = nullptr;
 
     std::atomic<float>* inputGainParam  = nullptr;
     std::atomic<float>* outputGainParam = nullptr;
@@ -120,6 +124,13 @@ private:
     std::atomic<float> inputLevelDb  { -60.0f };
     std::atomic<float> outputLevelDb { -60.0f };
     double currentSampleRate = 44100.0;
+
+    // Gain Reduction Limit — plafonne la réduction max du compresseur actif,
+    // indépendamment de l'algorithme (comparaison directe sortie vs entrée sèche)
+    std::vector<float> dryLeftScratch, dryRightScratch;
+
+    // Ducking Delay/Reverb — enveloppe suivant le signal juste avant ces étages
+    float duckEnvelope = 0.0f;
 
     // Bypass par section — "actif" = traite le signal, sinon le laisse passer inchangé
     std::atomic<float>* resBroadActiveParam   = nullptr;

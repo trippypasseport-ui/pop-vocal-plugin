@@ -189,43 +189,43 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
         case 2: // Rap
             values = {
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.4f},{"resBroadDepth",0.5f},{"resBroadMix",1.0f},
-                {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.5f},{"compP2",1.0f},{"compP3",1.0f},
+                {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.5f},{"compP2",1.0f},{"compP3",1.0f},{"compGainReductionLimit",12.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",150.0f},{"eqLow",-2.0f},{"eqLowFreq",100.0f},
                 {"eqHighMid",3.0f},{"eqHighMidFreq",2500.0f},{"eqHigh",1.0f},{"eqHighFreq",9000.0f},{"eqHighCutFreq",10000.0f},{"eqAirAmount",0.0f},
-                {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.3f},{"delayMix",0.15f},{"delayPingPong",0.0f},
-                {"reverbActive",1.0f},{"reverbMix",0.08f},{"reverbSize",0.3f},{"reverbDamping",0.6f}
+                {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.3f},{"delayMix",0.15f},{"delayPingPong",0.0f},{"delayDuckAmount",0.6f},
+                {"reverbActive",1.0f},{"reverbMix",0.08f},{"reverbSize",0.3f},{"reverbDamping",0.6f},{"reverbDuckAmount",0.6f}
             };
             break;
 
         case 3: // Pop Lead
             values = {
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.35f},{"resBroadDepth",0.4f},{"resBroadMix",1.0f},
-                {"compressorActive",1.0f},{"compMode",2.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
+                {"compressorActive",1.0f},{"compMode",2.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},{"compGainReductionLimit",15.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",90.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
                 {"eqLowMid",-1.0f},{"eqLowMidFreq",400.0f},{"eqHigh",2.0f},{"eqHighFreq",12000.0f},{"eqHighCutFreq",19000.0f},{"eqAirAmount",3.5f},
-                {"delayActive",1.0f},{"delayRateMode",2.0f},{"delayFeedback",0.25f},{"delayMix",0.15f},{"delayPingPong",0.0f},
-                {"reverbActive",1.0f},{"reverbMix",0.2f},{"reverbSize",0.5f},{"reverbDamping",0.2f}
+                {"delayActive",1.0f},{"delayRateMode",2.0f},{"delayFeedback",0.25f},{"delayMix",0.15f},{"delayPingPong",0.0f},{"delayDuckAmount",0.5f},
+                {"reverbActive",1.0f},{"reverbMix",0.2f},{"reverbSize",0.5f},{"reverbDamping",0.2f},{"reverbDuckAmount",0.5f}
             };
             break;
 
         case 4: // R&B / Doux
             values = {
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.2f},{"resBroadDepth",0.25f},{"resBroadMix",0.8f},
-                {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},
+                {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.3f},{"compP2",0.5f},{"compP3",1.0f},{"compGainReductionLimit",10.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.3f},{"resPreciseDepth",0.15f},{"resPreciseMix",0.7f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",80.0f},{"eqLow",3.0f},{"eqLowFreq",120.0f},
                 {"eqHighMid",-1.0f},{"eqHighMidFreq",1000.0f},{"eqHigh",-2.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",16000.0f},{"eqAirAmount",0.0f},
-                {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.35f},{"delayMix",0.2f},{"delayPingPong",1.0f},
-                {"reverbActive",1.0f},{"reverbMix",0.25f},{"reverbSize",0.75f},{"reverbDamping",0.4f}
+                {"delayActive",1.0f},{"delayRateMode",3.0f},{"delayFeedback",0.35f},{"delayMix",0.2f},{"delayPingPong",1.0f},{"delayDuckAmount",0.3f},
+                {"reverbActive",1.0f},{"reverbMix",0.25f},{"reverbSize",0.75f},{"reverbDamping",0.4f},{"reverbDuckAmount",0.3f}
             };
             break;
 
         case 5: // Podcast / Voix parlee
             values = {
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.6f},{"resBroadDepth",0.8f},{"resBroadMix",1.0f},
-                {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.2f},{"compP2",0.5f},{"compP3",0.5f},
+                {"compressorActive",1.0f},{"compMode",1.0f},{"compP1",0.2f},{"compP2",0.5f},{"compP3",0.5f},{"compGainReductionLimit",18.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.65f},{"resPreciseDepth",0.5f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",150.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
                 {"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",14000.0f},{"eqAirAmount",0.0f},
@@ -238,12 +238,12 @@ void PopVocalAudioProcessorEditor::applyMasterPreset (int selectedId)
         default:
             values = {
                 {"resBroadActive",1.0f},{"resBroadSensitivity",0.35f},{"resBroadDepth",0.4f},{"resBroadMix",1.0f},
-                {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.3f},{"compP2",1.0f},{"compP3",1.0f},
+                {"compressorActive",1.0f},{"compMode",0.0f},{"compP1",0.3f},{"compP2",1.0f},{"compP3",1.0f},{"compGainReductionLimit",24.0f},
                 {"resPreciseActive",1.0f},{"resPreciseSensitivity",0.5f},{"resPreciseDepth",0.3f},{"resPreciseMix",1.0f},
                 {"eqActive",1.0f},{"eqMode",0.0f},{"eqLowMid",0.0f},{"eqLowMidFreq",300.0f},{"eqHighMid",0.0f},{"eqHighMidFreq",3000.0f},{"eqLowCutFreq",80.0f},{"eqLow",0.0f},{"eqLowFreq",120.0f},
                 {"eqHigh",0.0f},{"eqHighFreq",8000.0f},{"eqHighCutFreq",18000.0f},{"eqAirAmount",0.0f},
-                {"delayActive",1.0f},{"delayRateMode",0.0f},{"delayTime",0.3f},{"delayFeedback",0.3f},{"delayMix",0.0f},{"delayPingPong",0.0f},
-                {"reverbActive",1.0f},{"reverbMix",0.0f},{"reverbSize",0.5f},{"reverbDamping",0.5f}
+                {"delayActive",1.0f},{"delayRateMode",0.0f},{"delayTime",0.3f},{"delayFeedback",0.3f},{"delayMix",0.0f},{"delayPingPong",0.0f},{"delayDuckAmount",0.5f},
+                {"reverbActive",1.0f},{"reverbMix",0.0f},{"reverbSize",0.5f},{"reverbDamping",0.5f},{"reverbDuckAmount",0.5f}
             };
             break;
     }
@@ -336,12 +336,14 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= COMPRESSOR =================
     finishSectionSetup (compressorSection, "COMPRESSOR");
+    compressorSection.knobColumns = 2; // 4 knobs -> grille 2x2
     addAndMakeVisible (compressorActiveToggle);
     compressorSection.activeToggle = &compressorActiveToggle;
     compressorActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "compressorActive", compressorActiveToggle);
     attach (addKnob (compressorSection, "INTENSITY").slider, "compP1");
     attach (addKnob (compressorSection, "OUTPUT").slider,    "compP2");
     attach (addKnob (compressorSection, "MIX").slider,       "compP3");
+    attach (addKnob (compressorSection, "GR LIMIT").slider,  "compGainReductionLimit");
 
     compModeBox.addItem ("Agressif (Pop)",    1);
     compModeBox.addItem ("Doux (ButterComp)", 2);
@@ -513,12 +515,14 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= DELAY =================
     finishSectionSetup (delaySection, "DELAY");
+    delaySection.knobColumns = 2; // 4 knobs -> grille 2x2
     addAndMakeVisible (delayActiveToggle);
     delaySection.activeToggle = &delayActiveToggle;
     delayActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "delayActive", delayActiveToggle);
     attach (addKnob (delaySection, "TIME").slider, "delayTime");
     attach (addKnob (delaySection, "FEEDBACK").slider,    "delayFeedback");
     attach (addKnob (delaySection, "MIX").slider,         "delayMix");
+    attach (addKnob (delaySection, "DUCK").slider,        "delayDuckAmount");
 
     delayRateBox.addItem ("Free", 1);
     delayRateBox.addItem ("1/2", 2);
@@ -536,12 +540,14 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
 
     // ================= REVERB =================
     finishSectionSetup (reverbSection, "REVERB");
+    reverbSection.knobColumns = 2; // 4 knobs -> grille 2x2
     addAndMakeVisible (reverbActiveToggle);
     reverbSection.activeToggle = &reverbActiveToggle;
     reverbActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "reverbActive", reverbActiveToggle);
     attach (addKnob (reverbSection, "MIX").slider,     "reverbMix");
     attach (addKnob (reverbSection, "SIZE").slider,    "reverbSize");
     attach (addKnob (reverbSection, "DAMPING").slider, "reverbDamping");
+    attach (addKnob (reverbSection, "DUCK").slider,    "reverbDuckAmount");
 
     reverbPresetBox.addItem ("Off", 1);
     reverbPresetBox.addItem ("Room", 2);
