@@ -197,6 +197,7 @@ void PopVocalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 
 void PopVocalAudioProcessor::releaseResources()
 {
+    duckEnvelope = 0.0f;
     autoBalancer.reset();
     resonancePrecise.reset();
 

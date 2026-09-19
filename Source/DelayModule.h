@@ -86,16 +86,25 @@ public:
             const float inL = left[i];
             const float inR = right[i];
 
+            // Les deux réseaux (normal ET ping-pong) tournent TOUJOURS en
+            // parallèle, même quand un seul est audible — comme ça, basculer
+            // le mode en cours de lecture ne tombe jamais sur un buffer froid
+            // (silencieux ou périmé), donc pas de trou au changement.
+            const float delayedL = bufferL[(size_t) readIndex0] * (1.0f - frac) + bufferL[(size_t) readIndex1] * frac;
+            const float delayedR = bufferR[(size_t) readIndex0] * (1.0f - frac) + bufferR[(size_t) readIndex1] * frac;
+            const float delayedMono = bufferPingPong[(size_t) readIndex0] * (1.0f - frac)
+                                     + bufferPingPong[(size_t) readIndex1] * frac;
+
+            bufferL[(size_t) writePos] = inL + delayedL * feedback;
+            bufferR[(size_t) writePos] = inR + delayedR * feedback;
+
+            const float inputMono = 0.5f * (inL + inR);
+            bufferPingPong[(size_t) writePos] = inputMono + delayedMono * feedback;
+
             float wetL, wetR;
 
             if (pingPong)
             {
-                const float delayedMono = bufferPingPong[(size_t) readIndex0] * (1.0f - frac)
-                                         + bufferPingPong[(size_t) readIndex1] * frac;
-
-                const float inputMono = 0.5f * (inL + inR);
-                bufferPingPong[(size_t) writePos] = inputMono + delayedMono * feedback;
-
                 // Génération de répétition en cours -> détermine le côté cible.
                 // generation impaire (1ere répétition) -> DROITE ; paire -> GAUCHE.
                 totalSamplesElapsed += 1.0;
@@ -112,12 +121,6 @@ public:
             }
             else
             {
-                const float delayedL = bufferL[(size_t) readIndex0] * (1.0f - frac) + bufferL[(size_t) readIndex1] * frac;
-                const float delayedR = bufferR[(size_t) readIndex0] * (1.0f - frac) + bufferR[(size_t) readIndex1] * frac;
-
-                bufferL[(size_t) writePos] = inL + delayedL * feedback;
-                bufferR[(size_t) writePos] = inR + delayedR * feedback;
-
                 wetL = delayedL;
                 wetR = delayedR;
             }

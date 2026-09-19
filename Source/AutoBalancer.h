@@ -37,6 +37,12 @@ public:
         sampleRate = sampleRateIn;
         controlBlockSize = 32;
 
+        // Coefficient de lissage calculé depuis une vraie constante de temps
+        // (pas une fraction fixe par bloc) — sans ça, le balanceur réagit deux
+        // fois plus vite à 96kHz qu'à 44.1kHz pour les mêmes réglages.
+        const double controlBlockSeconds = (double) controlBlockSize / sampleRate;
+        smoothCoeff = 1.0f - (float) std::exp (-controlBlockSeconds / smoothTimeConstantSeconds);
+
         for (int ch = 0; ch < 2; ++ch)
         {
             lowFilter[ch].coefficients  = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sampleRate, lowCrossoverFreq, 0.707f);
@@ -119,10 +125,10 @@ private:
         const double midTargetDb  = computeTargetDb (midLevel);
         const double highTargetDb = computeTargetDb (highLevel);
 
-        const float smoothCoeff = 0.15f; // lissage vers la cible, evite les a-coups
-        lowGainSmoothedDb  += ((float) lowTargetDb  - lowGainSmoothedDb)  * smoothCoeff;
-        midGainSmoothedDb  += ((float) midTargetDb  - midGainSmoothedDb)  * smoothCoeff;
-        highGainSmoothedDb += ((float) highTargetDb - highGainSmoothedDb) * smoothCoeff;
+        const float smoothCoeffLocal = smoothCoeff; // lissage vers la cible, temps-constant (voir prepare())
+        lowGainSmoothedDb  += ((float) lowTargetDb  - lowGainSmoothedDb)  * smoothCoeffLocal;
+        midGainSmoothedDb  += ((float) midTargetDb  - midGainSmoothedDb)  * smoothCoeffLocal;
+        highGainSmoothedDb += ((float) highTargetDb - highGainSmoothedDb) * smoothCoeffLocal;
 
         const float lowGain  = juce::Decibels::decibelsToGain (lowGainSmoothedDb);
         const float midGain  = juce::Decibels::decibelsToGain (midGainSmoothedDb);
@@ -143,6 +149,8 @@ private:
 
     double sampleRate = 44100.0;
     int controlBlockSize = 32;
+    static constexpr float smoothTimeConstantSeconds = 0.08f; // ~80ms, independant du sample rate
+    float smoothCoeff = 0.15f; // recalcule dans prepare()
 
     float sensitivity = 0.35f;
     float maxCorrectionDb = 4.8f;

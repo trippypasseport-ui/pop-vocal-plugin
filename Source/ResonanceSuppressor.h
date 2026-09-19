@@ -63,6 +63,15 @@ public:
         sampleRate = sampleRateIn;
         controlBlockSize = 32;
 
+        // Coefficients de lissage calculés depuis de vraies constantes de temps
+        // (pas une fraction fixe par bloc) — sans ça, ce module réagit deux
+        // fois plus vite à 96kHz qu'à 44.1kHz pour les mêmes réglages.
+        const double controlBlockSeconds = (double) controlBlockSize / sampleRate;
+        envelopeAttackCoeff  = 1.0f - (float) std::exp (-controlBlockSeconds / envelopeAttackTimeSeconds);
+        envelopeReleaseCoeff = 1.0f - (float) std::exp (-controlBlockSeconds / envelopeReleaseTimeSeconds);
+        reductionRiseCoeff   = 1.0f - (float) std::exp (-controlBlockSeconds / reductionRiseTimeSeconds);
+        reductionFallCoeff   = 1.0f - (float) std::exp (-controlBlockSeconds / reductionFallTimeSeconds);
+
         for (int ch = 0; ch < 2; ++ch)
         {
             for (int b = 0; b < numBands; ++b)
@@ -138,8 +147,8 @@ private:
             broadbandSum += std::fabs (0.5 * ((double) left[i] + (double) right[i]));
         const double broadbandBlockLevel = broadbandSum / (double) juce::jmax (1, blockLen);
 
-        const float attackCoeff  = 0.35f;   // réagit vite à une résonance qui apparaît
-        const float releaseCoeff = 0.05f;   // relâche plus progressivement
+        const float attackCoeff  = envelopeAttackCoeff;   // réagit vite à une résonance qui apparaît
+        const float releaseCoeff = envelopeReleaseCoeff;  // relâche plus progressivement
 
         for (int ch = 0; ch < 2; ++ch)
         {
@@ -168,7 +177,7 @@ private:
                 }
 
                 // Lissage de la réduction elle-même (évite les à-coups de filtre)
-                const float smoothCoeff = (float) targetReductionDb > smoothedReductionDb[ch][b] ? 0.5f : 0.15f;
+                const float smoothCoeff = (float) targetReductionDb > smoothedReductionDb[ch][b] ? reductionRiseCoeff : reductionFallCoeff;
                 smoothedReductionDb[ch][b] += ((float) targetReductionDb - smoothedReductionDb[ch][b]) * smoothCoeff;
 
                 updateProcessingFilter (ch, b, (double) smoothedReductionDb[ch][b]);
@@ -204,6 +213,16 @@ private:
 
     double sampleRate = 44100.0;
     int controlBlockSize = 32;
+
+    // Constantes de temps réelles (secondes) — les coefficients ci-dessous
+    // sont recalculés depuis celles-ci dans prepare(), pour rester
+    // indépendants du sample rate.
+    static constexpr double envelopeAttackTimeSeconds  = 0.015;
+    static constexpr double envelopeReleaseTimeSeconds = 0.120;
+    static constexpr double reductionRiseTimeSeconds   = 0.040;
+    static constexpr double reductionFallTimeSeconds   = 0.350;
+    float envelopeAttackCoeff = 0.35f, envelopeReleaseCoeff = 0.05f;
+    float reductionRiseCoeff = 0.5f, reductionFallCoeff = 0.15f;
 
     double thresholdRatio = 2.0;
     double maxDepthDb = 9.0;
