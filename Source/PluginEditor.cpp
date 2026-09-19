@@ -615,17 +615,12 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (outputCeilingLabel);
     attach (outputCeilingSlider, "outputCeiling");
 
-    setSize (1300, 900); // EQ pleine largeur (mode Normal 13 knobs + Pultec) a fait grandir la fenetre
+    setSize (1300, 760); // EQ revenue dans une case normale de la grille, plus besoin de plus de hauteur
 }
 
 PopVocalAudioProcessorEditor::~PopVocalAudioProcessorEditor()
 {
     setLookAndFeel (nullptr);
-}
-
-namespace
-{
-    constexpr int eqRowHeight = 300;
 }
 
 void PopVocalAudioProcessorEditor::paint (juce::Graphics& g)
@@ -648,10 +643,6 @@ void PopVocalAudioProcessorEditor::paint (juce::Graphics& g)
     drawPanel (g, outputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0));
 
     auto content = full.reduced (24, 0).withTop (86).withBottom (getHeight() - 24);
-
-    drawPanel (g, content.removeFromTop (eqRowHeight));
-    content.removeFromTop (16);
-
     const int rowHeight = content.getHeight() / 2 - 8;
     const int colWidth  = (content.getWidth() - 2 * 16) / 3;
 
@@ -702,24 +693,32 @@ void PopVocalAudioProcessorEditor::resized()
     }
 
     auto content = full.reduced (24, 0).withTop (86).withBottom (getHeight() - 24);
+    const int rowHeight = content.getHeight() / 2 - 8;
+    const int colWidth  = (content.getWidth() - 2 * 16) / 3;
 
+    int x = content.getX();
+    layoutSection ({ x, content.getY(), colWidth, rowHeight }, resBroadSection);
+    x += colWidth + 16;
+    layoutSection ({ x, content.getY(), colWidth, rowHeight }, compressorSection);
+    x += colWidth + 16;
+    layoutSection ({ x, content.getY(), colWidth, rowHeight }, resPreciseSection);
+
+    // ============ EQ : case normale de la grille (comme les 5 autres) ============
     {
-        auto area = content.removeFromTop (eqRowHeight);
-        content.removeFromTop (16);
-
+        juce::Rectangle<int> area { content.getX(), content.getY() + rowHeight + 16, colWidth, rowHeight };
         area.reduce (10, 6);
+
         auto titleRow = area.removeFromTop (18);
         eqActiveToggle.setBounds (titleRow.removeFromRight (46));
         eqSection.titleLabel.setBounds (titleRow);
 
-        auto controlRow = area.removeFromTop (24);
-        eqModeBox.setBounds (controlRow.removeFromLeft (140));
-        controlRow.removeFromLeft (8);
-        eqPresetBox.setBounds (controlRow.removeFromLeft (180));
+        auto controlRow = area.removeFromTop (20);
+        eqModeBox.setBounds (controlRow.removeFromLeft (controlRow.getWidth() / 2).reduced (2, 0));
+        eqPresetBox.setBounds (controlRow.reduced (2, 0));
 
         auto normalArea = area;
-        auto curveArea = normalArea.removeFromTop (44);
-        eqCurve.setBounds (curveArea.reduced (2, 2));
+        auto curveArea = normalArea.removeFromTop (28);
+        eqCurve.setBounds (curveArea.reduced (2, 1));
 
         const int columns = 4;
         const int totalKnobs = (int) eqSection.knobs.size();
@@ -735,69 +734,43 @@ void PopVocalAudioProcessorEditor::resized()
             {
                 auto cell = rowArea.withX (rowArea.getX() + c * knobWidth).withWidth (knobWidth);
                 auto& knob = *eqSection.knobs[(size_t) (r * columns + c)];
-                knob.label.setBounds (cell.removeFromTop (14));
-                knob.slider.setBounds (cell.reduced (4, 2));
+                knob.label.setBounds (cell.removeFromTop (12));
+                knob.slider.setBounds (cell.reduced (2, 1));
             }
         }
 
         auto pultecArea = area;
-        const int pultecCols = 8;
-        const int pultecColWidth = pultecArea.getWidth() / pultecCols;
-        auto takeCell = [&] () { return pultecArea.removeFromLeft (pultecColWidth); };
+        const int pultecCols = 4;
+        const int pultecRowH = pultecArea.getHeight() / 2;
+        auto row1 = pultecArea.removeFromTop (pultecRowH);
+        auto row2 = pultecArea;
+        const int pw = row1.getWidth() / pultecCols;
 
+        auto placeCombo = [&] (juce::Rectangle<int> row, int col, juce::ComboBox& box, juce::Label& label)
         {
-            auto cell = takeCell();
-            pultecLowFreqLabel.setBounds (cell.removeFromTop (14));
-            pultecLowFreqBox.setBounds (cell.reduced (4, 6).withHeight (24));
-        }
+            auto cell = row.withX (row.getX() + col * pw).withWidth (pw);
+            label.setBounds (cell.removeFromTop (12));
+            box.setBounds (cell.reduced (2, 3).withHeight (20));
+        };
+        auto placeKnob = [&] (juce::Rectangle<int> row, int col, Knob& knob)
         {
-            auto cell = takeCell();
-            pultecLowBoostKnob.label.setBounds (cell.removeFromTop (14));
-            pultecLowBoostKnob.slider.setBounds (cell.reduced (4, 2));
-        }
-        {
-            auto cell = takeCell();
-            pultecLowAttenKnob.label.setBounds (cell.removeFromTop (14));
-            pultecLowAttenKnob.slider.setBounds (cell.reduced (4, 2));
-        }
-        {
-            auto cell = takeCell();
-            pultecHighBoostFreqLabel.setBounds (cell.removeFromTop (14));
-            pultecHighBoostFreqBox.setBounds (cell.reduced (4, 6).withHeight (24));
-        }
-        {
-            auto cell = takeCell();
-            pultecHighBoostKnob.label.setBounds (cell.removeFromTop (14));
-            pultecHighBoostKnob.slider.setBounds (cell.reduced (4, 2));
-        }
-        {
-            auto cell = takeCell();
-            pultecHighBandwidthKnob.label.setBounds (cell.removeFromTop (14));
-            pultecHighBandwidthKnob.slider.setBounds (cell.reduced (4, 2));
-        }
-        {
-            auto cell = takeCell();
-            pultecHighAttenFreqLabel.setBounds (cell.removeFromTop (14));
-            pultecHighAttenFreqBox.setBounds (cell.reduced (4, 6).withHeight (24));
-        }
-        {
-            auto cell = takeCell();
-            pultecHighAttenKnob.label.setBounds (cell.removeFromTop (14));
-            pultecHighAttenKnob.slider.setBounds (cell.reduced (4, 2));
-        }
+            auto cell = row.withX (row.getX() + col * pw).withWidth (pw);
+            knob.label.setBounds (cell.removeFromTop (12));
+            knob.slider.setBounds (cell.reduced (2, 1));
+        };
+
+        placeCombo (row1, 0, pultecLowFreqBox, pultecLowFreqLabel);
+        placeKnob  (row1, 1, pultecLowBoostKnob);
+        placeKnob  (row1, 2, pultecLowAttenKnob);
+        placeCombo (row1, 3, pultecHighBoostFreqBox, pultecHighBoostFreqLabel);
+
+        placeKnob  (row2, 0, pultecHighBoostKnob);
+        placeKnob  (row2, 1, pultecHighBandwidthKnob);
+        placeCombo (row2, 2, pultecHighAttenFreqBox, pultecHighAttenFreqLabel);
+        placeKnob  (row2, 3, pultecHighAttenKnob);
     }
 
-    const int rowHeight = content.getHeight() / 2 - 8;
-    const int colWidth  = (content.getWidth() - 2 * 16) / 3;
-
-    int x = content.getX();
-    layoutSection ({ x, content.getY(), colWidth, rowHeight }, resBroadSection);
-    x += colWidth + 16;
-    layoutSection ({ x, content.getY(), colWidth, rowHeight }, compressorSection);
-    x += colWidth + 16;
-    layoutSection ({ x, content.getY(), colWidth, rowHeight }, resPreciseSection);
-
-    x = content.getX();
+    x = content.getX() + colWidth + 16;
     layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, delaySection);
     x += colWidth + 16;
     layoutSection ({ x, content.getY() + rowHeight + 16, colWidth, rowHeight }, reverbSection);
