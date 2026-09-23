@@ -60,6 +60,8 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     inputGainParam  = apvts.getRawParameterValue ("inputGain");
     outputGainParam = apvts.getRawParameterValue ("outputGain");
     outputCeilingParam = apvts.getRawParameterValue ("outputCeiling");
+    deEsserThresholdParam = apvts.getRawParameterValue ("deEsserThreshold");
+    deEsserAmountParam    = apvts.getRawParameterValue ("deEsserAmount");
 
     resBroadActiveParam   = apvts.getRawParameterValue ("resBroadActive");
     compressorActiveParam = apvts.getRawParameterValue ("compressorActive");
@@ -162,6 +164,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("inputGain",  "Input Gain",  -24.0f, 24.0f, 0.0f);
     addFloat ("outputGain", "Output Gain", -24.0f, 24.0f, 0.0f);
     addFloat ("outputCeiling", "Ceiling", -12.0f, 0.0f, -0.3f);
+    addFloat ("deEsserThreshold", "De-Ess Threshold", -40.0f, 0.0f, -20.0f);
+    addFloat ("deEsserAmount",    "De-Ess Amount",     0.0f, 1.0f, 0.3f);
 
     // Bypass par section (tous actifs par défaut)
     auto addBool = [&params] (const juce::String& id, const juce::String& name)
@@ -193,6 +197,14 @@ void PopVocalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     delay.prepare (sampleRate, samplesPerBlock);
     reverb.prepare (sampleRate, samplesPerBlock);
     outputLimiter.prepare (sampleRate);
+    deEsser.prepare (sampleRate, samplesPerBlock);
+
+    // Latence totale signalée à l'hôte : lookahead du De-Esser (~2ms) +
+    // latence FFT du De-Res spectral (1024 échantillons, ~23ms à 44.1kHz) —
+    // les deux s'additionnent puisqu'elles sont en série dans la chaîne.
+    const int deEsserLatency = (int) (0.002 * sampleRate);
+    const int spectralDeResLatency = SpectralResonanceSuppressor::getLatencySamples();
+    setLatencySamples (deEsserLatency + spectralDeResLatency);
 }
 
 void PopVocalAudioProcessor::releaseResources()
@@ -209,6 +221,7 @@ void PopVocalAudioProcessor::releaseResources()
     delay.reset();
     reverb.reset();
     outputLimiter.reset();
+    deEsser.reset();
 }
 
 bool PopVocalAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -385,7 +398,12 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         reverb.processStereo (left, right, numSamples);
     }
 
-    // 7. Gain de sortie + limiteur de sécurité + mètre (après tout traitement)
+    // 7. De-Esser — tout dernier étage de traitement, attrape les sifflantes
+    // après toute la coloration en amont, avant le gain/limiteur de sortie
+    deEsser.setParameters (deEsserThresholdParam->load(), deEsserAmountParam->load());
+    deEsser.processStereo (left, right, numSamples);
+
+    // 8. Gain de sortie + limiteur de sécurité + mètre (après tout traitement)
     buffer.applyGain (juce::Decibels::decibelsToGain (outputGainParam->load()));
     outputLimiter.setCeilingDb (outputCeilingParam->load());
     outputLimiter.processStereo (left, right, numSamples);

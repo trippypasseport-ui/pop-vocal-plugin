@@ -72,7 +72,9 @@ public:
         auto highMidC  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sr, highMidFreq, 1.0f, juce::Decibels::decibelsToGain (highMidGain));
         auto highC     = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sr, highFreq, 0.707f, juce::Decibels::decibelsToGain (highGain));
         auto airDipC   = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sr, 7500.0f, 1.2f, juce::Decibels::decibelsToGain (-(airAmount * 0.4f)));
-        auto airShelfC = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sr, 15000.0f, 0.707f, juce::Decibels::decibelsToGain (airAmount));
+        // Le lift Air est maintenant un exciter harmonique (non-linéaire) — pas
+        // représentable comme une simple courbe de gain, on n'affiche que le
+        // creux (partie linéaire) pour cette bande.
         auto highCutC  = juce::dsp::IIR::Coefficients<float>::makeLowPass (sr, highCutFreq, 0.707f);
 
         juce::Path curve;
@@ -90,7 +92,6 @@ public:
             totalDb += juce::Decibels::gainToDecibels (highMidC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += juce::Decibels::gainToDecibels (highC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += juce::Decibels::gainToDecibels (airDipC->getMagnitudeForFrequency ((double) freq, sr));
-            totalDb += juce::Decibels::gainToDecibels (airShelfC->getMagnitudeForFrequency ((double) freq, sr));
             totalDb += 2.0 * juce::Decibels::gainToDecibels (highCutC->getMagnitudeForFrequency ((double) freq, sr));
 
             const float x = bounds.getX() + t * bounds.getWidth();

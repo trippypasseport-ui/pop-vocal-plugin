@@ -621,6 +621,26 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (outputCeilingLabel);
     attach (outputCeilingSlider, "outputCeiling");
 
+    deEsserThresholdSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    deEsserThresholdSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 50, 14);
+    addAndMakeVisible (deEsserThresholdSlider);
+    deEsserThresholdLabel.setText ("DE-ESS THRESH", juce::dontSendNotification);
+    deEsserThresholdLabel.setFont (juce::Font (8.5f, juce::Font::bold));
+    deEsserThresholdLabel.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
+    deEsserThresholdLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (deEsserThresholdLabel);
+    attach (deEsserThresholdSlider, "deEsserThreshold");
+
+    deEsserAmountSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    deEsserAmountSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 50, 14);
+    addAndMakeVisible (deEsserAmountSlider);
+    deEsserAmountLabel.setText ("DE-ESS AMOUNT", juce::dontSendNotification);
+    deEsserAmountLabel.setFont (juce::Font (8.5f, juce::Font::bold));
+    deEsserAmountLabel.setColour (juce::Label::textColourId, juce::Colour (0xff8a8a92));
+    deEsserAmountLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (deEsserAmountLabel);
+    attach (deEsserAmountSlider, "deEsserAmount");
+
     setSize (1300, 760); // EQ revenue dans une case normale de la grille, plus besoin de plus de hauteur
 }
 
@@ -687,6 +707,14 @@ void PopVocalAudioProcessorEditor::resized()
         auto area = outputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0);
         area.reduce (8, 6);
         outputTitleLabel.setBounds (area.removeFromTop (18));
+
+        auto deEsserArea = area.removeFromTop (66);
+        auto deEsserCell1 = deEsserArea.removeFromLeft (deEsserArea.getWidth() / 2);
+        deEsserThresholdLabel.setBounds (deEsserCell1.removeFromTop (12));
+        deEsserThresholdSlider.setBounds (deEsserCell1.reduced (2, 0));
+        deEsserAmountLabel.setBounds (deEsserArea.removeFromTop (12));
+        deEsserAmountSlider.setBounds (deEsserArea.reduced (2, 0));
+
         auto gainArea = area.removeFromBottom (78);
         outputMeter.setBounds (area.reduced (10, 4));
 

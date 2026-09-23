@@ -4,13 +4,14 @@
 #include "PopCompressor.h"
 #include "ButterCompCompressor.h"
 #include "VariMuCompressor.h"
-#include "ResonanceSuppressor.h"
 #include "AutoBalancer.h"
+#include "SpectralResonanceSuppressor.h"
 #include "ParametricEQ.h"
 #include "PultecEQ.h"
 #include "DelayModule.h"
 #include "ReverbModule.h"
 #include "OutputLimiter.h"
+#include "DeEsser.h"
 #include <array>
 #include <vector>
 
@@ -59,7 +60,7 @@ private:
     // EQ -> de-res précise (nettoie ce que l'EQ a pu faire ressortir) ->
     // delay (sync tempo + ping-pong + duck) -> reverb (duck)
     AutoBalancer autoBalancer;               // ex "de-res large" -> vrai balanceur multibande maintenant
-    ResonanceSuppressor resonancePrecise { 6.0f };
+    SpectralResonanceSuppressor resonancePrecise; // ex 8-bandes fixes -> suivi de frequence adaptatif (FFT)
 
     PopCompressor        compAgressif;
     ButterCompCompressor compDoux;
@@ -71,6 +72,7 @@ private:
     DelayModule delay;
     ReverbModule reverb;
     OutputLimiter outputLimiter;
+    DeEsser deEsser;
 
     std::atomic<float>* resBroadSensitivityParam = nullptr;
     std::atomic<float>* resBroadDepthParam       = nullptr;
@@ -123,6 +125,8 @@ private:
     std::atomic<float>* inputGainParam  = nullptr;
     std::atomic<float>* outputGainParam = nullptr;
     std::atomic<float>* outputCeilingParam = nullptr;
+    std::atomic<float>* deEsserThresholdParam = nullptr;
+    std::atomic<float>* deEsserAmountParam    = nullptr;
     std::atomic<float> inputLevelDb  { -60.0f };
     std::atomic<float> outputLevelDb { -60.0f };
     double currentSampleRate = 44100.0;

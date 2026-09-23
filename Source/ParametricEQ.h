@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_dsp/juce_dsp.h>
+#include <cmath>
 
 /*
     ParametricEQ — mode "Normal"
@@ -15,7 +16,15 @@
       - Low-Mid bell (150-800 Hz, défaut 300 Hz)   : boxy / rondeur
       - High-Mid bell (1500-6000 Hz, défaut 3 kHz) : mordant / dureté
       - High shelf  (2000-16000 Hz, défaut 8kHz)   : air / brillance
-      - Air (knob 0-6, quantité)                   : creux ~7.5kHz + lift ~15kHz
+      - Air (knob 0-6, quantité)                   : creux ~7.5kHz (désamorce
+                                                     la dureté) + EXCITER harmonique
+                                                     (~3.5kHz+, génère de nouvelles
+                                                     harmoniques via waveshaping,
+                                                     mélangées en parallèle) — un
+                                                     simple filtre ne peut pas "ouvrir"
+                                                     le son, seule la génération
+                                                     d'harmoniques le fait (voir la
+                                                     doc du projet pour la source)
       - High Cut  (coupe-haut, 24dB/oct)
     ============================================================
 */
@@ -30,7 +39,7 @@ public:
         {
             lowCut1[ch].reset(); lowCut2[ch].reset();
             lowShelf[ch].reset(); lowMidBell[ch].reset(); highMidBell[ch].reset(); highShelf[ch].reset();
-            airDip[ch].reset(); airShelf[ch].reset();
+            airDip[ch].reset(); airExciterFilter[ch].reset();
             highCut1[ch].reset(); highCut2[ch].reset();
         }
         updateCoefficients();
@@ -42,7 +51,7 @@ public:
         {
             lowCut1[ch].reset(); lowCut2[ch].reset();
             lowShelf[ch].reset(); lowMidBell[ch].reset(); highMidBell[ch].reset(); highShelf[ch].reset();
-            airDip[ch].reset(); airShelf[ch].reset();
+            airDip[ch].reset(); airExciterFilter[ch].reset();
             highCut1[ch].reset(); highCut2[ch].reset();
         }
     }
@@ -61,7 +70,10 @@ public:
         highGain = highGainDb; highFreq = highFreqHz;
         highCutFreq = highCutFreqHz;
         airDipDb   = -(airAmount * 0.4f);
-        airShelfDb =   airAmount;
+        // Exciter : drive augmente avec la quantité (plus d'harmoniques generees),
+        // mix parallele monte jusqu'a 55% au max plutot que de remplacer le signal
+        airDrive     = 1.0f + airAmount * 1.3f;
+        airMixAmount = (airAmount / 6.0f) * 0.55f;
         updateCoefficients();
     }
 
@@ -76,7 +88,7 @@ public:
             l = highMidBell[0].processSample (l);
             l = highShelf[0].processSample (l);
             l = airDip[0].processSample (l);
-            l = airShelf[0].processSample (l);
+            l = applyAirExciter (l, 0);
             l = highCut1[0].processSample (l);
             l = highCut2[0].processSample (l);
             left[i] = l;
@@ -88,7 +100,7 @@ public:
             r = highMidBell[1].processSample (r);
             r = highShelf[1].processSample (r);
             r = airDip[1].processSample (r);
-            r = airShelf[1].processSample (r);
+            r = applyAirExciter (r, 1);
             r = highCut1[1].processSample (r);
             r = highCut2[1].processSample (r);
             right[i] = r;
@@ -96,6 +108,21 @@ public:
     }
 
 private:
+    // Exciter Air : isole le haut du spectre, génère des harmoniques par
+    // waveshaping (tanh, doux), mélange en PARALLÈLE avec le signal d'origine
+    // — un simple filtre ne peut qu'amplifier ce qui existe déjà, l'exciter
+    // ajoute du contenu qui n'était pas là, ce qui est ce qui donne l'effet
+    // "ouverture" perçu sur les vrais outils "Air" (Eiosis/Slate, Maag).
+    float applyAirExciter (float x, int ch)
+    {
+        if (airMixAmount <= 0.0001f)
+            return x;
+
+        const float hf = airExciterFilter[ch].processSample (x);
+        const float shaped = std::tanh (hf * airDrive) / juce::jmax (0.5f, airDrive * 0.6f);
+        return x + shaped * airMixAmount;
+    }
+
     void updateCoefficients()
     {
         auto lowCutCoeffs   = juce::dsp::IIR::Coefficients<float>::makeHighPass (sampleRate, lowCutFreq, 0.707f);
@@ -104,7 +131,7 @@ private:
         auto highMidCoeffs  = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, highMidFreq, 1.0f, juce::Decibels::decibelsToGain (highMidGain));
         auto highCoeffs     = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, highFreq, 0.707f, juce::Decibels::decibelsToGain (highGain));
         auto airDipCoeffs   = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, airDipFreq, 1.2f, juce::Decibels::decibelsToGain (airDipDb));
-        auto airShelfCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, airShelfFreq, 0.707f, juce::Decibels::decibelsToGain (airShelfDb));
+        auto airExciterCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighPass (sampleRate, airExciterFreq, 0.707f);
         auto highCutCoeffs  = juce::dsp::IIR::Coefficients<float>::makeLowPass (sampleRate, highCutFreq, 0.707f);
 
         for (int ch = 0; ch < 2; ++ch)
@@ -115,7 +142,7 @@ private:
             highMidBell[ch].coefficients = highMidCoeffs;
             highShelf[ch].coefficients = highCoeffs;
             airDip[ch].coefficients = airDipCoeffs;
-            airShelf[ch].coefficients = airShelfCoeffs;
+            airExciterFilter[ch].coefficients = airExciterCoeffs;
             highCut1[ch].coefficients = highCutCoeffs; highCut2[ch].coefficients = highCutCoeffs;
         }
     }
@@ -124,12 +151,13 @@ private:
     float lowGain = 0.0f, lowMidGain = 0.0f, highMidGain = 0.0f, highGain = 0.0f;
     float lowFreq = 120.0f, lowMidFreq = 300.0f, highMidFreq = 3000.0f, highFreq = 8000.0f;
     float lowCutFreq = 80.0f, highCutFreq = 18000.0f;
-    float airDipDb = 0.0f, airShelfDb = 0.0f;
+    float airDipDb = 0.0f;
+    float airDrive = 1.0f, airMixAmount = 0.0f;
     static constexpr float airDipFreq = 7500.0f;
-    static constexpr float airShelfFreq = 15000.0f;
+    static constexpr float airExciterFreq = 3500.0f;
 
     juce::dsp::IIR::Filter<float> lowCut1[2], lowCut2[2];
     juce::dsp::IIR::Filter<float> lowShelf[2], lowMidBell[2], highMidBell[2], highShelf[2];
-    juce::dsp::IIR::Filter<float> airDip[2], airShelf[2];
+    juce::dsp::IIR::Filter<float> airDip[2], airExciterFilter[2];
     juce::dsp::IIR::Filter<float> highCut1[2], highCut2[2];
 };

@@ -77,6 +77,8 @@ private:
     juce::Label inputTitleLabel, outputTitleLabel;
     juce::Slider inputGainSlider, outputGainSlider, outputCeilingSlider;
     juce::Label inputGainLabel, outputGainLabel, outputCeilingLabel;
+    juce::Slider deEsserThresholdSlider, deEsserAmountSlider;
+    juce::Label deEsserThresholdLabel, deEsserAmountLabel;
     LevelMeter inputMeter, outputMeter;
 
     using SliderAttachment      = juce::AudioProcessorValueTreeState::SliderAttachment;

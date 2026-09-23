@@ -100,8 +100,12 @@ private:
     void updateCoefficients()
     {
         // Boost grave : shelf large (Q bas) -> la bosse douce caractéristique
+        // Boost grave : shelf, Q resserré (0.9 au lieu de 0.5 large) pour que la
+        // bosse boost+atten reste contenue autour de la fréquence choisie plutôt
+        // que de déborder largement au-dessus — trop large + poussé fort, ça
+        // sonnait comme un boost sale plutôt que la bosse musicale du vrai Pultec
         auto lowBoostCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowShelf (
-            sampleRate, lowFreq, 0.5f, juce::Decibels::decibelsToGain (lowBoostDb));
+            sampleRate, lowFreq, 0.9f, juce::Decibels::decibelsToGain (lowBoostDb));
         // Atten grave : cloche plus étroite, MÊME fréquence -> le "trou" du truc Pultec
         auto lowAttenCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter (
             sampleRate, lowFreq, 1.5f, juce::Decibels::decibelsToGain (-lowAttenDb));
