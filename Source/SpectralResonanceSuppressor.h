@@ -32,15 +32,14 @@
         setLatencySamples() côté PluginProcessor, sinon décalage
         temporel en enregistrement live à travers le plugin.
 
-    Point à vérifier en priorité (pas testable sans compiler) :
-      la normalisation de la FFT inverse de JUCE. Ce fichier
-      suppose que `juce::dsp::FFT::perform(..., inverse=true)` NE
-      divise PAS automatiquement par fftSize (contrairement à
-      certaines bibliothèques comme numpy) — la division
-      manuelle par fftSize est donc faite explicitement plus bas.
-      Si le son sort avec un volume totalement aberrant (beaucoup
-      trop fort ou beaucoup trop faible), c'est le premier endroit
-      à vérifier.
+    Point vérifié après un premier test réel (v29→v30) : la
+      normalisation de la FFT inverse de JUCE. Ce fichier divisait
+      manuellement par fftSize en supposant que
+      `juce::dsp::FFT::perform(..., inverse=true)` ne normalisait
+      pas automatiquement — hypothèse fausse : ça rendait la sortie
+      ~1024x trop silencieuse (plus rien d'audible en activant ce
+      module). Corrigé en retirant cette division manuelle ;
+      `perform()` normalise donc bien lui-même sur l'inverse.
     ============================================================
 */
 
@@ -186,9 +185,12 @@ private:
         for (int n = 0; n < fftSize; ++n)
         {
             const int idx = (ringWritePos[ch] + n) % fftSize;
-            // Division par fftSize : voir la note en tête de fichier sur la
-            // normalisation de la FFT inverse — a vérifier en priorité.
-            outputAccumulator[ch][(size_t) idx] += timeDomain[(size_t) n].real() / (float) fftSize;
+            // Pas de division manuelle par fftSize ici : juce::dsp::FFT::perform()
+            // normalise déjà en interne sur la transformée inverse (division/N
+            // automatique). La diviser une 2e fois ici rendait le résultat ~1024x
+            // trop silencieux — exactement le "plus rien en sortie" rapporté en
+            // test réel. C'était LE point de risque signalé en tête de ce fichier.
+            outputAccumulator[ch][(size_t) idx] += timeDomain[(size_t) n].real();
         }
     }
 
