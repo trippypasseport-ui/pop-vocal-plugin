@@ -40,8 +40,14 @@ public:
         reductionFallCoeff    = 1.0f - (float) std::exp (-controlBlockSeconds / reductionFallTimeSeconds);
 
         lookaheadSamples = juce::jmax (1, (int) (lookaheadSeconds * sampleRate));
-        delayBufferL.assign ((size_t) lookaheadSamples + 1, 0.0f);
-        delayBufferR.assign ((size_t) lookaheadSamples + 1, 0.0f);
+        // Le buffer doit contenir AU MOINS lookaheadSamples + controlBlockSize
+        // de marge : sinon, la position de lecture retombe dans la zone que le
+        // bloc en cours vient tout juste d'écrire (chevauchement), et on relit
+        // des échantillons quasi neufs au lieu du signal vraiment retardé —
+        // c'est exactement ce qui causait le grésillement trouvé en test réel.
+        const int bufSizeNeeded = lookaheadSamples + controlBlockSize + 16;
+        delayBufferL.assign ((size_t) bufSizeNeeded, 0.0f);
+        delayBufferR.assign ((size_t) bufSizeNeeded, 0.0f);
 
         for (int ch = 0; ch < 2; ++ch)
         {

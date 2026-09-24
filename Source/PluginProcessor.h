@@ -127,6 +127,7 @@ private:
     std::atomic<float>* outputCeilingParam = nullptr;
     std::atomic<float>* deEsserThresholdParam = nullptr;
     std::atomic<float>* deEsserAmountParam    = nullptr;
+    std::atomic<float>* deEsserActiveParam    = nullptr;
     std::atomic<float> inputLevelDb  { -60.0f };
     std::atomic<float> outputLevelDb { -60.0f };
     double currentSampleRate = 44100.0;

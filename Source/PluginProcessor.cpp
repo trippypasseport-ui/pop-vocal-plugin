@@ -62,6 +62,7 @@ PopVocalAudioProcessor::PopVocalAudioProcessor()
     outputCeilingParam = apvts.getRawParameterValue ("outputCeiling");
     deEsserThresholdParam = apvts.getRawParameterValue ("deEsserThreshold");
     deEsserAmountParam    = apvts.getRawParameterValue ("deEsserAmount");
+    deEsserActiveParam    = apvts.getRawParameterValue ("deEsserActive");
 
     resBroadActiveParam   = apvts.getRawParameterValue ("resBroadActive");
     compressorActiveParam = apvts.getRawParameterValue ("compressorActive");
@@ -166,6 +167,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("outputCeiling", "Ceiling", -12.0f, 0.0f, -0.3f);
     addFloat ("deEsserThreshold", "De-Ess Threshold", -40.0f, 0.0f, -20.0f);
     addFloat ("deEsserAmount",    "De-Ess Amount",     0.0f, 1.0f, 0.3f);
+    params.push_back (std::make_unique<juce::AudioParameterBool> (
+        "deEsserActive", "De-Esser Active", true));
 
     // Bypass par section (tous actifs par défaut)
     auto addBool = [&params] (const juce::String& id, const juce::String& name)
@@ -400,8 +403,11 @@ void PopVocalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 
     // 7. De-Esser — tout dernier étage de traitement, attrape les sifflantes
     // après toute la coloration en amont, avant le gain/limiteur de sortie
-    deEsser.setParameters (deEsserThresholdParam->load(), deEsserAmountParam->load());
-    deEsser.processStereo (left, right, numSamples);
+    if (deEsserActiveParam->load() > 0.5f)
+    {
+        deEsser.setParameters (deEsserThresholdParam->load(), deEsserAmountParam->load());
+        deEsser.processStereo (left, right, numSamples);
+    }
 
     // 8. Gain de sortie + limiteur de sécurité + mètre (après tout traitement)
     buffer.applyGain (juce::Decibels::decibelsToGain (outputGainParam->load()));

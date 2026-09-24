@@ -621,6 +621,10 @@ PopVocalAudioProcessorEditor::PopVocalAudioProcessorEditor (PopVocalAudioProcess
     addAndMakeVisible (outputCeilingLabel);
     attach (outputCeilingSlider, "outputCeiling");
 
+    deEsserActiveToggle.setToggleState (true, juce::dontSendNotification);
+    addAndMakeVisible (deEsserActiveToggle);
+    deEsserActiveAttachment = std::make_unique<ButtonAttachment> (apvts, "deEsserActive", deEsserActiveToggle);
+
     deEsserThresholdSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     deEsserThresholdSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 50, 14);
     addAndMakeVisible (deEsserThresholdSlider);
@@ -706,7 +710,9 @@ void PopVocalAudioProcessorEditor::resized()
     {
         auto area = outputStrip.withTop (86).withBottom (getHeight() - 24).reduced (8, 0);
         area.reduce (8, 6);
-        outputTitleLabel.setBounds (area.removeFromTop (18));
+        auto titleRow = area.removeFromTop (18);
+        deEsserActiveToggle.setBounds (titleRow.removeFromRight (20));
+        outputTitleLabel.setBounds (titleRow);
 
         auto deEsserArea = area.removeFromTop (66);
         auto deEsserCell1 = deEsserArea.removeFromLeft (deEsserArea.getWidth() / 2);

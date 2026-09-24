@@ -79,6 +79,7 @@ private:
     juce::Label inputGainLabel, outputGainLabel, outputCeilingLabel;
     juce::Slider deEsserThresholdSlider, deEsserAmountSlider;
     juce::Label deEsserThresholdLabel, deEsserAmountLabel;
+    juce::ToggleButton deEsserActiveToggle { "" };
     LevelMeter inputMeter, outputMeter;
 
     using SliderAttachment      = juce::AudioProcessorValueTreeState::SliderAttachment;
@@ -90,6 +91,7 @@ private:
     std::unique_ptr<ButtonAttachment> delayPingPongAttachment;
     std::unique_ptr<ButtonAttachment> resBroadActiveAttachment, compressorActiveAttachment, resPreciseActiveAttachment;
     std::unique_ptr<ButtonAttachment> eqActiveAttachment, delayActiveAttachment, reverbActiveAttachment;
+    std::unique_ptr<ButtonAttachment> deEsserActiveAttachment;
     std::unique_ptr<ComboBoxAttachment> eqModeAttachment;
     std::unique_ptr<ComboBoxAttachment> pultecLowFreqAttachment, pultecHighBoostFreqAttachment, pultecHighAttenFreqAttachment;
 
