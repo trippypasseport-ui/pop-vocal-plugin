@@ -165,7 +165,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout PopVocalAudioProcessor::crea
     addFloat ("inputGain",  "Input Gain",  -24.0f, 24.0f, 0.0f);
     addFloat ("outputGain", "Output Gain", -24.0f, 24.0f, 0.0f);
     addFloat ("outputCeiling", "Ceiling", -12.0f, 0.0f, -0.3f);
-    addFloat ("deEsserThreshold", "De-Ess Threshold", -40.0f, 0.0f, -20.0f);
+    // Marge relative en dB (bande sifflante vs signal large-bande), pas un
+    // seuil absolu -- voir DeEsser.h. Plus bas = plus sensible.
+    addFloat ("deEsserThreshold", "De-Ess Threshold", -6.0f, 18.0f, 6.0f);
     addFloat ("deEsserAmount",    "De-Ess Amount",     0.0f, 1.0f, 0.3f);
     params.push_back (std::make_unique<juce::AudioParameterBool> (
         "deEsserActive", "De-Esser Active", true));
