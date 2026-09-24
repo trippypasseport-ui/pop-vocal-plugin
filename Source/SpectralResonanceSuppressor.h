@@ -28,18 +28,26 @@
         de session) — donc aucune normalisation OLA n'est
         nécessaire à la resynthèse.
       - Latence induite : exactement fftSize (1024 échantillons,
-        ~23ms à 44.1kHz) — DOIT être déclarée à l'hôte via
-        setLatencySamples() côté PluginProcessor, sinon décalage
-        temporel en enregistrement live à travers le plugin.
+        ~23ms à 44.1kHz) — déclarée à l'hôte via setLatencySamples()
+        côté PluginProcessor.
+      - AUCUNE allocation mémoire dans processStereo()/processFrame() :
+        tous les buffers (frame, spectrum, timeDomain) sont
+        pré-alloués une seule fois dans prepare() et réutilisés à
+        chaque frame. Une v1 de ce fichier allouait 3 std::vector
+        à CHAQUE frame (~86 fois/seconde/canal) directement dans le
+        thread audio — faute classique en DSP temps réel, cause
+        probable d'un "plus rien en sortie" observé en test réel sur
+        machine ancienne (le thread audio décroche, l'hôte coupe la
+        sortie du plugin par sécurité). Corrigé.
 
     Point vérifié après un premier test réel (v29→v30) : la
       normalisation de la FFT inverse de JUCE. Ce fichier divisait
       manuellement par fftSize en supposant que
       `juce::dsp::FFT::perform(..., inverse=true)` ne normalisait
-      pas automatiquement — hypothèse fausse : ça rendait la sortie
-      ~1024x trop silencieuse (plus rien d'audible en activant ce
-      module). Corrigé en retirant cette division manuelle ;
-      `perform()` normalise donc bien lui-même sur l'inverse.
+      pas automatiquement — hypothèse fausse, confirmée en lisant le
+      vrai code source JUCE (moteur vDSP ET moteur de repli
+      appliquent tous les deux le 1/N automatiquement sur l'inverse).
+      Division manuelle retirée en v30.
     ============================================================
 */
 
@@ -72,11 +80,15 @@ public:
 
         referenceMag.assign ((size_t) numBins, 1.0e-6f);
         smoothedGain.assign ((size_t) numBins, 1.0f);
+        smoothedGainScratch.assign ((size_t) numBins, 1.0f);
+        currentMagScratch.assign ((size_t) numBins, 0.0f);
 
-        // Constantes de temps réelles (secondes), converties en coefficients
-        // par frame (chaque frame = hopSize échantillons) — indépendant du
-        // sample rate, même principe que les corrections déjà faites ailleurs
-        // dans le projet (voir AutoBalancer / ResonanceSuppressor / DeEsser).
+        // Buffers de travail FFT, pré-alloués une seule fois — jamais
+        // d'allocation mémoire dans processStereo()/processFrame().
+        frameScratch.assign ((size_t) fftSize, std::complex<float> (0.0f, 0.0f));
+        spectrumScratch.assign ((size_t) fftSize, std::complex<float> (0.0f, 0.0f));
+        timeDomainScratch.assign ((size_t) fftSize, std::complex<float> (0.0f, 0.0f));
+
         const double frameSeconds = (double) hopSize / sampleRate;
         referenceCoeff = 1.0f - (float) std::exp (-frameSeconds / referenceTimeConstantSeconds);
         gainRiseCoeff  = 1.0f - (float) std::exp (-frameSeconds / gainRiseTimeConstantSeconds);
@@ -114,9 +126,6 @@ public:
     {
         for (int i = 0; i < numSamples; ++i)
         {
-            // Le chemin "wet" a fftSize échantillons de retard (latence FFT) —
-            // il faut retarder le "dry" du même montant avant de les mélanger,
-            // sinon le Mix combine deux versions du signal décalées de ~23ms.
             const float rawDryL = left[i];
             const float rawDryR = right[i];
 
@@ -156,51 +165,46 @@ private:
 
     void processFrame (int ch)
     {
-        std::vector<std::complex<float>> frame ((size_t) fftSize);
         for (int n = 0; n < fftSize; ++n)
         {
             const int idx = (ringWritePos[ch] + n) % fftSize; // plus ancien -> plus recent
-            frame[(size_t) n] = std::complex<float> (inputRingBuffer[ch][(size_t) idx] * window[(size_t) n], 0.0f);
+            frameScratch[(size_t) n] = std::complex<float> (inputRingBuffer[ch][(size_t) idx] * window[(size_t) n], 0.0f);
         }
 
-        std::vector<std::complex<float>> spectrum ((size_t) fftSize);
-        fft.perform (frame.data(), spectrum.data(), false);
+        fft.perform (frameScratch.data(), spectrumScratch.data(), false);
 
         // Référence/gain partagés entre L et R (calculés une fois par frame,
         // au passage du canal 0) pour que la correction reste identique des
         // deux côtés et ne déséquilibre jamais l'image stéréo.
         if (ch == 0)
-            updateGainCurve (spectrum);
+            updateGainCurve();
 
         for (int b = 0; b < numBins; ++b)
         {
-            spectrum[(size_t) b] *= smoothedGain[(size_t) b];
+            spectrumScratch[(size_t) b] *= smoothedGain[(size_t) b];
             if (b > 0 && b < fftSize - b)
-                spectrum[(size_t) (fftSize - b)] = std::conj (spectrum[(size_t) b]); // miroir conjugué
+                spectrumScratch[(size_t) (fftSize - b)] = std::conj (spectrumScratch[(size_t) b]); // miroir conjugué
         }
 
-        std::vector<std::complex<float>> timeDomain ((size_t) fftSize);
-        fft.perform (spectrum.data(), timeDomain.data(), true);
+        fft.perform (spectrumScratch.data(), timeDomainScratch.data(), true);
 
         for (int n = 0; n < fftSize; ++n)
         {
             const int idx = (ringWritePos[ch] + n) % fftSize;
-            // Pas de division manuelle par fftSize ici : juce::dsp::FFT::perform()
-            // normalise déjà en interne sur la transformée inverse (division/N
-            // automatique). La diviser une 2e fois ici rendait le résultat ~1024x
-            // trop silencieux — exactement le "plus rien en sortie" rapporté en
-            // test réel. C'était LE point de risque signalé en tête de ce fichier.
-            outputAccumulator[ch][(size_t) idx] += timeDomain[(size_t) n].real();
+            outputAccumulator[ch][(size_t) idx] += timeDomainScratch[(size_t) n].real();
         }
     }
 
-    void updateGainCurve (const std::vector<std::complex<float>>& spectrum)
+    void updateGainCurve()
     {
         const float thresholdDb = 3.0f + (1.0f - sensitivity) * 12.0f; // sensitivity haute -> seuil bas
 
         for (int b = 0; b < numBins; ++b)
+            currentMagScratch[(size_t) b] = std::abs (spectrumScratch[(size_t) b]);
+
+        for (int b = 0; b < numBins; ++b)
         {
-            const float currentMag = std::abs (spectrum[(size_t) b]);
+            const float currentMag = currentMagScratch[(size_t) b];
             referenceMag[(size_t) b] += (currentMag - referenceMag[(size_t) b]) * referenceCoeff;
 
             const float ref = juce::jmax (1.0e-6f, referenceMag[(size_t) b]);
@@ -219,12 +223,12 @@ private:
         // Lissage léger sur les bins voisins (moyenne 3 points) pour éviter
         // les discontinuités en dents de scie d'un bin à l'autre — le genre
         // d'artefact qui donnerait un son "métallique"/granuleux sans ça.
-        std::vector<float> smoothedAcrossFreq = smoothedGain;
+        smoothedGainScratch = smoothedGain;
         for (int b = 1; b < numBins - 1; ++b)
-            smoothedAcrossFreq[(size_t) b] = 0.25f * smoothedGain[(size_t) (b - 1)]
-                                            + 0.5f  * smoothedGain[(size_t) b]
-                                            + 0.25f * smoothedGain[(size_t) (b + 1)];
-        smoothedGain = smoothedAcrossFreq;
+            smoothedGainScratch[(size_t) b] = 0.25f * smoothedGain[(size_t) (b - 1)]
+                                             + 0.5f  * smoothedGain[(size_t) b]
+                                             + 0.25f * smoothedGain[(size_t) (b + 1)];
+        smoothedGain = smoothedGainScratch;
     }
 
     juce::dsp::FFT fft;
@@ -241,6 +245,12 @@ private:
 
     std::vector<float> referenceMag;
     std::vector<float> smoothedGain;
+    std::vector<float> smoothedGainScratch;
+    std::vector<float> currentMagScratch;
+
+    // Buffers FFT pré-alloués (voir note en tête de fichier : jamais
+    // d'allocation dans processStereo()/processFrame()).
+    std::vector<std::complex<float>> frameScratch, spectrumScratch, timeDomainScratch;
 
     float referenceCoeff = 0.1f, gainRiseCoeff = 0.5f, gainFallCoeff = 0.1f;
     static constexpr float referenceTimeConstantSeconds = 0.4f;  // "spectre normal" moyenne sur ~400ms
